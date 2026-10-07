@@ -1,0 +1,22 @@
+# Backend
+Backend/.env
+Backend/vendor/
+Backend/node_modules/
+
+# Frontend
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
