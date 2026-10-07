@@ -6,12 +6,12 @@ import {
   REFRESH_TOKEN_COOKIE,
   USER_COOKIE,
 } from "@/lib/config"
-import type { User } from "@/types"
+import type { SessionUser, User } from "@/types"
 
 export interface Session {
   accessToken: string
   refreshToken: string | null
-  user: User | null
+  user: SessionUser | null
 }
 
 export async function getSession(): Promise<Session | null> {
@@ -21,7 +21,7 @@ export async function getSession(): Promise<Session | null> {
 
   const refreshToken = store.get(REFRESH_TOKEN_COOKIE)?.value ?? null
 
-  let user: User | null = null
+  let user: SessionUser | null = null
   const rawUser = store.get(USER_COOKIE)?.value
   if (rawUser) {
     try {

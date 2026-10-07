@@ -120,9 +120,9 @@ frontend/
 | Kode | Modul | Route | Endpoint utama | Status |
 |---|---|---|---|---|
 | M0 | Fondasi & Setup | – | (backend: CORS, PORT, seed) | ✅ Selesai |
-| M1 | Autentikasi & Proteksi | `/login` | `POST /auth/login`, `/refresh`, `/logout`, `GET /auth/me` | ⬜ Belum |
-| M2 | Dashboard Ringkasan | `/dashboard` | `GET /admin/dashboard` | ⬜ Belum |
-| M3 | Verifikasi Partner | `/partners` | `GET /partners`, `GET /partners/:id`, `approve/reject/suspend`, `documents` | ⬜ Belum |
+| M1 | Autentikasi & Proteksi | `/login` | `POST /auth/login`, `/refresh`, `/logout`, `GET /auth/me` | ✅ Selesai |
+| M2 | Dashboard Ringkasan | `/dashboard` | `GET /admin/dashboard` | ✅ Selesai |
+| M3 | Verifikasi Partner | `/partners` | `GET /partners`, `GET /partners/:id`, `approve/reject/suspend`, `documents` | ✅ Selesai |
 | M4 | Manajemen Order (+ M11 Tracking) | `/orders` | `GET /orders`, `GET /orders/:id`, `tracking/*` | ⬜ Belum |
 | M5 | Pembayaran | `/payments` | `GET /payments`, `PATCH /payments/:id/mark-paid` | ⬜ Belum |
 | M6 | Harga (Zona & Promo) | `/pricing/*` | `GET/POST/PATCH /pricing/zones`, `/promos` | ⬜ Belum |

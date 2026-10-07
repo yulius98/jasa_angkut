@@ -3,7 +3,7 @@
 **Tujuan:** admin meninjau pengajuan partner, melihat dokumen identitas & kendaraan,
 lalu menyetujui, menolak, atau mensuspend.
 
-**Status:** ⬜ Belum · **Bergantung pada:** M0, M1
+**Status:** ✅ Selesai · **Bergantung pada:** M0, M1
 
 ---
 
@@ -50,15 +50,29 @@ dokumen hanya via endpoint dokumen. `PartnerStatus`: `PENDING|APPROVED|REJECTED|
 - `DataTable`, `Pagination`, `StatusBadge`, `ConfirmDialog`, `ReasonDialog`,
   `DocumentViewer` (modal gambar), `PageHeader`.
 
+## Catatan Implementasi
+- Dokumen di-stream melalui satu Route Handler catch-all: `app/api/proxy/[...path]/route.ts`.
+  Hanya pola `partners/:uuid/documents/{ktp|sim}` dan `vehicles/:uuid/files/{stnk|photo}`
+  yang di-forward (cegah SSRF); UUID & enum divalidasi. `refreshOn401` dipakai untuk
+  meng-update access token saat akses dokumen.
+- Mutasi (approve/reject/suspend) lewat `app/api/admin/partners/[id]/[action]/route.ts`
+  (PATCH, `serverFetch` `refreshOn401`); client lalu `router.refresh()`.
+- Filter status adalah `<select>` client yang me-rewrite query string, tidak menambah
+  state server; pagination server-side via `TablePagination`.
+- `PartnerActions` menampilkan tombol sesuai status: PENDING → Setujui/Tolak,
+  APPROVED → Suspend. Alasan (min 5 char) divalidasi di sisi client & backend.
+- Tipe `Partner`/`Vehicle` pada FE men-jalankan omit backend: `ktpPhotoUrl`,
+  `simPhotoUrl`, `photoUrl`, `stnkPhotoUrl` tidak lagi ada di tipe (dokumen hanya via proxy).
+
 ---
 
 ## Acceptance Criteria
 
-- [ ] List + filter status + pagination berjalan.
-- [ ] Detail menampilkan profil, user, dan kendaraan.
-- [ ] KTP/SIM/STNK/foto kendaraan bisa dilihat (via proxy, tidak bocor ke URL publik).
-- [ ] Approve gagal dengan pesan jelas bila partner belum punya kendaraan aktif.
-- [ ] Reject/Suspend meminta alasan dan berhasil.
-- [ ] Setelah aksi, data di halaman diperbarui (refresh/redirect).
-- [ ] Parameter `type`/`kind` divalidasi (`ktp|sim`, `stnk|photo`).
-- [ ] `pnpm lint` & `pnpm build` lolos.
+- [x] List + filter status + pagination berjalan.
+- [x] Detail menampilkan profil, user, dan kendaraan.
+- [x] KTP/SIM/STNK/foto kendaraan bisa dilihat (via proxy, tidak bocor ke URL publik).
+- [x] Approve gagal dengan pesan jelas bila partner belum punya kendaraan aktif.
+- [x] Reject/Suspend meminta alasan dan berhasil.
+- [x] Setelah aksi, data di halaman diperbarui (refresh/redirect).
+- [x] Parameter `type`/`kind` divalidasi (`ktp|sim`, `stnk|photo`).
+- [x] `pnpm lint` & `pnpm build` lolos.

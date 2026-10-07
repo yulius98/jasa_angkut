@@ -128,6 +128,22 @@ export const PAYMENT_STATUS_META: Record<PaymentStatus, StatusMeta> = {
   REFUNDED: { label: "Refund", variant: "outline" },
 }
 
+export const ORDER_STATUSES: OrderStatus[] = Object.keys(
+  ORDER_STATUS_META
+) as OrderStatus[]
+
+export const PARTNER_STATUSES: PartnerStatus[] = Object.keys(
+  PARTNER_STATUS_META
+) as PartnerStatus[]
+
+export const PAYMENT_METHODS: PaymentMethod[] = Object.keys(
+  PAYMENT_METHOD_META
+) as PaymentMethod[]
+
+export const PAYMENT_STATUSES: PaymentStatus[] = Object.keys(
+  PAYMENT_STATUS_META
+) as PaymentStatus[]
+
 export const PROMO_TYPE_META: Record<PromoType, StatusMeta> = {
   PERCENTAGE: { label: "Persentase", variant: "secondary" },
   FIXED_AMOUNT: { label: "Nominal", variant: "secondary" },

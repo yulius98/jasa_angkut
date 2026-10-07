@@ -2,7 +2,7 @@
 
 **Tujuan:** halaman utama berisi ringkasan kondisi bisnis untuk admin.
 
-**Status:** ⬜ Belum · **Bergantung pada:** M0, M1
+**Status:** ✅ Selesai · **Bergantung pada:** M0, M1
 
 ---
 
@@ -47,15 +47,24 @@ Bentuk response:
 - Pintasan aksi: verifikasi partner pending, dispute open, order berjalan.
 
 ## Komponen
-- `StatCard`, `StatusDistribution`, `StatusBadge`, `PageHeader`.
+- `StatCard`, `StatusDistribution`, `StatusBadge`, `PageHeader`, `ErrorState`.
+
+## Catatan Implementasi
+- `app/(dashboard)/dashboard/page.tsx` (Server Component) memakai `serverFetch` dan
+  `{ cache: "no-store" }`; pada error non-`ApiError` (mis. redirect refresh) error
+  dilempar ulang agar redirect tidak tertelan `try/catch`.
+- `loading.tsx` di direktori yang sama menyediakan skeleton (Suspense).
+- Nilai uang memakai `formatRupiah` (Rp + non-breaking space + titik ribuan).
+- Kartu mitra & dispute bisa menjadi tautan kontekstual: link ke `/partners?status=PENDING`
+  bila ada pending, ke `/disputes?status=open` bila ada dispute terbuka.
 
 ---
 
 ## Acceptance Criteria
 
-- [ ] Semua metrik pada response tampil dan akurat.
-- [ ] Nilai 0 tetap ditampilkan (bukan disembunyikan).
-- [ ] Nilai uang diformat Rupiah.
-- [ ] Tautan pintasan mengarah ke modul terkait dengan filter yang sesuai.
-- [ ] Ada penanganan loading (skeleton) dan error.
-- [ ] `pnpm lint` & `pnpm build` lolos.
+- [x] Semua metrik pada response tampil dan akurat.
+- [x] Nilai 0 tetap ditampilkan (bukan disembunyikan).
+- [x] Nilai uang diformat Rupiah.
+- [x] Tautan pintasan mengarah ke modul terkait dengan filter yang sesuai.
+- [x] Ada penanganan loading (skeleton) dan error.
+- [x] `pnpm lint` & `pnpm build` lolos.

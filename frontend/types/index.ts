@@ -103,13 +103,21 @@ export interface User {
   updatedAt: string
 }
 
+export interface SessionUser {
+  id: string
+  name: string
+  email: string
+  role: UserRole
+}
+
+export type PartnerDocType = "ktp" | "sim"
+export type VehicleFileKind = "stnk" | "photo"
+
 export interface Partner {
   id: string
   userId: string
   ktpNumber: string
-  ktpPhotoUrl: string
   simNumber: string
-  simPhotoUrl: string
   status: PartnerStatus
   isOnline: boolean
   currentLatitude: string | null
@@ -126,6 +134,16 @@ export interface Partner {
   _count?: { vehicles?: number; orders?: number }
 }
 
+export type PartnerListItem = Partner & {
+  user: User
+  _count: { vehicles: number }
+}
+
+export type PartnerDetail = Partner & {
+  user: User
+  vehicles: Vehicle[]
+}
+
 export interface Vehicle {
   id: string
   partnerId: string
@@ -133,8 +151,6 @@ export interface Vehicle {
   plateNumber: string
   brand: string
   model: string
-  photoUrl: string | null
-  stnkPhotoUrl: string
   maxWeightKg: string
   maxVolumeM3: string
   isActive: boolean
@@ -300,3 +316,23 @@ export interface Withdrawal {
 }
 
 export type StatusFilter = "ALL" | string
+
+export interface DashboardStats {
+  orders: {
+    total: number
+    byStatus: Record<OrderStatus, number>
+  }
+  customers: {
+    total: number
+  }
+  partners: {
+    byStatus: Record<PartnerStatus, number>
+  }
+  revenue: {
+    gmv: number
+    totalCommission: number
+  }
+  disputes: {
+    open: number
+  }
+}
