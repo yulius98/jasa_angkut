@@ -397,11 +397,12 @@ model Dispute {
 model Withdrawal {
   id                String    @id @default(uuid())
   referenceNo       String    @unique @map("reference_no")
+  provider          String   @default("IRIS") // IRIS (Midtrans) atau XENDIT
   beneficiaryName   String    @map("beneficiary_name")
   bankCode          String    @map("bank_code")
   bankAccountNumber String    @map("bank_account_number")
-  amount            Decimal   @db.Decimal(12, 2)
-  status            String    @default("pending") // pending, submitted, failed, + status asli dari Iris setelah sinkron
+  amount            String
+  status            String    @default("pending") // pending, submitted, failed, + status asli dari provider setelah sinkron
   notes             String?
   requestedBy       String    @map("requested_by")
   submittedAt       DateTime? @map("submitted_at")

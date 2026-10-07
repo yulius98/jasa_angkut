@@ -1,5 +1,10 @@
 import { Type } from 'class-transformer';
-import { IsNotEmpty, IsNumber, IsOptional, IsPositive, IsString, MaxLength } from 'class-validator';
+import { IsEnum, IsNotEmpty, IsNumber, IsOptional, IsPositive, IsString, MaxLength } from 'class-validator';
+
+export enum WithdrawalProvider {
+  IRIS = 'IRIS',
+  XENDIT = 'XENDIT',
+}
 
 export class CreateWithdrawalDto {
   @IsString()
@@ -7,8 +12,10 @@ export class CreateWithdrawalDto {
   @MaxLength(100)
   beneficiaryName: string;
 
-  // Kode bank sesuai daftar bank yang didukung Iris (BCA, BNI, MANDIRI, dst).
-  // Daftar lengkapnya hanya ada di dokumentasi resmi, belum divalidasi di sini.
+  // Formatnya BEDA tergantung provider:
+  // - IRIS: kode bank biasa (BCA, BNI, MANDIRI, dst)
+  // - XENDIT: channel code Xendit (format "ID_BCA", "ID_BNI", dst) --
+  //   daftar lengkapnya lewat GET /payout_channels, belum diimplementasikan di sini
   @IsString()
   @IsNotEmpty()
   @MaxLength(20)
@@ -28,4 +35,9 @@ export class CreateWithdrawalDto {
   @IsString()
   @MaxLength(255)
   notes?: string;
+
+  // Default IRIS kalau tidak diisi -- menjaga perilaku lama tetap sama.
+  @IsOptional()
+  @IsEnum(WithdrawalProvider)
+  provider?: WithdrawalProvider;
 }

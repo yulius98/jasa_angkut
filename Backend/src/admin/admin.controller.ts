@@ -9,6 +9,7 @@ import { AdminService } from './admin.service.js';
 import { ListDisputesQuery } from './dto/list-disputes.query.js';
 import { ResolveDisputeDto } from './dto/resolve-dispute.dto.js';
 import { BalanceQueryDto } from './dto/balance-query.dto.js';
+import { ListXenditTransactionsQuery } from './dto/list-xendit-transactions.query.js';
 
 @Controller('admin')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -24,6 +25,16 @@ export class AdminController {
   @Get('midtrans/balance')
   getMidtransBalance(@Query() query: BalanceQueryDto) {
     return this.admin.getMidtransBalance(query);
+  }
+
+  @Get('xendit/balance')
+  getXenditBalance() {
+    return this.admin.getXenditBalance();
+  }
+
+  @Get('xendit/transactions')
+  listXenditTransactions(@Query() query: ListXenditTransactionsQuery) {
+    return this.admin.listXenditTransactions(query);
   }
 
   @Get('disputes')

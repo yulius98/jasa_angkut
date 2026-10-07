@@ -1,16 +1,19 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { MidtransClientService } from '../payments/midtrans.client.js';
+import { XenditClientService } from '../payments/xendit.client.js';
 import { OrderStatus, PartnerStatus, PaymentStatus } from '../generated/prisma/enums.js';
 import { ListDisputesQuery } from './dto/list-disputes.query.js';
 import { ResolveDisputeDto } from './dto/resolve-dispute.dto.js';
 import { BalanceQueryDto } from './dto/balance-query.dto.js';
+import { ListXenditTransactionsQuery } from './dto/list-xendit-transactions.query.js';
 
 @Injectable()
 export class AdminService {
   constructor(
     private prisma: PrismaService,
     private midtrans: MidtransClientService,
+    private xendit: XenditClientService,
   ) {}
 
   async getMidtransBalance(query: BalanceQueryDto) {
@@ -19,6 +22,14 @@ export class AdminService {
       endTime: new Date(query.endTime),
       currency: query.currency,
     });
+  }
+
+  async getXenditBalance() {
+    return this.xendit.getBalance();
+  }
+
+  async listXenditTransactions(query: ListXenditTransactionsQuery) {
+    return this.xendit.listTransactions(query);
   }
 
   async dashboard() {

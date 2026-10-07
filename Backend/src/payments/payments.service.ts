@@ -9,8 +9,11 @@ import { PrismaService } from '../prisma/prisma.service.js';
 import { OrderStatus, PaymentMethod, PaymentStatus, UserRole } from '../generated/prisma/enums.js';
 import type { AuthUser } from '../common/auth-user.js';
 import { MidtransClientService } from './midtrans.client.js';
+import { XenditClientService } from './xendit.client.js';
 import { verifyMidtransSignature, mapMidtransStatus } from './midtrans-signature.js';
-import { CreatePaymentDto } from './dto/create-payment.dto.js';
+import { mapXenditInvoiceStatus } from './xendit-signature.js';
+import { CreatePaymentDto, PaymentProvider } from './dto/create-payment.dto.js';
+import type { XenditInvoiceNotificationBody } from './dto/xendit-notification.dto.js';
 import { ListPaymentsQuery } from './dto/list-payments.query.js';
 import type { MidtransNotificationBody } from './dto/midtrans-notification.dto.js';
 
@@ -21,12 +24,13 @@ export class PaymentsService {
   constructor(
     private prisma: PrismaService,
     private midtrans: MidtransClientService,
+    private xendit: XenditClientService,
   ) {}
 
   async create(userId: string, dto: CreatePaymentDto) {
     const customer = await this.prisma.customerProfile.findUnique({
       where: { userId },
-      include: { user: { select: { name: true, phone: true } } },
+      include: { user: { select: { name: true, phone: true, email: true } } },
     });
     if (!customer) throw new NotFoundException('Profil customer tidak ditemukan');
 
@@ -59,8 +63,34 @@ export class PaymentsService {
       });
     }
 
-    // Non-cash: minta Midtrans buatkan transaksi, simpan Payment PENDING,
-    // status sebenarnya baru dikonfirmasi lewat webhook.
+    // Non-cash: pilih provider (default MIDTRANS kalau tidak diisi), minta dia
+    // buatkan transaksi, simpan Payment PENDING -- status sebenarnya baru
+    // dikonfirmasi lewat webhook masing-masing provider.
+    const provider = dto.provider ?? PaymentProvider.MIDTRANS;
+
+    if (provider === PaymentProvider.XENDIT) {
+      const invoice = await this.xendit.createInvoice({
+        orderNumber: order.orderNumber,
+        amount,
+        customerName: customer.user.name,
+        customerEmail: customer.user.email,
+      });
+
+      const payment = await this.prisma.payment.create({
+        data: {
+          orderId: dto.orderId,
+          method: dto.method,
+          status: PaymentStatus.PENDING,
+          amount,
+          commissionRate: DEFAULT_COMMISSION_RATE,
+          gatewayProvider: 'xendit',
+          gatewayRefId: order.orderNumber,
+        },
+      });
+
+      return { ...payment, invoiceUrl: invoice.invoiceUrl };
+    }
+
     const snap = await this.midtrans.createSnapTransaction({
       orderNumber: order.orderNumber,
       grossAmount: amount,
@@ -163,6 +193,30 @@ export class PaymentsService {
       this.prisma.payment.count({ where }),
     ]);
     return { data, meta: { page, limit, total } };
+  }
+
+  // Sama pola & alasannya dengan handleMidtransNotification -- dipanggil
+  // webhook, keasliannya sudah divalidasi di controller lewat x-callback-token.
+  async handleXenditNotification(body: XenditInvoiceNotificationBody) {
+    const mapped = mapXenditInvoiceStatus(body.status);
+    if (!mapped) return { received: true, action: 'ignored', reason: body.status };
+
+    const payment = await this.prisma.payment.findFirst({
+      where: { gatewayRefId: body.external_id },
+    });
+    if (!payment) {
+      return { received: true, action: 'ignored', reason: 'payment not found' };
+    }
+    if (payment.status !== PaymentStatus.PENDING) {
+      return { received: true, action: 'ignored', reason: 'already settled' };
+    }
+
+    if (mapped === 'PAID') {
+      await this.settlePayment(payment.id, Number(payment.amount), Number(payment.commissionRate));
+    } else {
+      await this.prisma.payment.update({ where: { id: payment.id }, data: { status: mapped } });
+    }
+    return { received: true, action: 'updated', status: mapped };
   }
 
   async getForOrder(user: AuthUser, orderId: string) {
