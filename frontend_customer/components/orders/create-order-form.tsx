@@ -148,7 +148,10 @@ export function CreateOrderForm({ apiKey }: { apiKey: string }) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="grid gap-5 px-4 py-4">
+    <form
+      onSubmit={handleSubmit}
+      className="grid gap-5 px-4 py-4 lg:mx-auto lg:w-full lg:max-w-3xl lg:px-8 lg:py-6"
+    >
       <Card className="gap-4 p-4">
         <h2 className="text-sm font-semibold">Titik jemput</h2>
         <LocationPicker

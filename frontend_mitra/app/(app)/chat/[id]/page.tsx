@@ -60,7 +60,7 @@ export default async function ChatThreadPage({
       : undefined
 
   return (
-    <div className="flex h-dvh flex-col pb-24">
+    <div className="flex h-dvh flex-col pb-24 lg:pb-0">
       <AppHeader title={title} subtitle={subtitle} back />
       <ChatThread
         conversationId={id}

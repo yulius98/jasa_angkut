@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation"
 
 import { AppHeader } from "@/components/app/app-header"
+import { DesktopPageHeader } from "@/components/app/desktop-page-header"
 import { ChatThread } from "@/components/chat/chat-thread"
 import { ErrorState } from "@/components/shared/error-state"
 import { ApiError, serverFetch } from "@/lib/api"
@@ -60,13 +61,25 @@ export default async function ChatThreadPage({
       : undefined
 
   return (
-    <div className="flex h-dvh flex-col pb-24">
+    <div className="flex h-dvh flex-col pb-24 lg:pb-0">
+      {/* Header mobile (disembunyikan pada desktop). */}
       <AppHeader title={title} subtitle={subtitle} back />
-      <ChatThread
-        conversationId={id}
-        currentUserId={session.user?.id ?? ""}
-        initialMessages={messages}
+
+      {/* Header desktop. */}
+      <DesktopPageHeader
+        title={title}
+        subtitle={subtitle}
+        backHref="/chat"
+        maxWidthClassName="max-w-3xl"
       />
+
+      <div className="mx-auto flex min-h-0 w-full max-w-3xl flex-1 flex-col">
+        <ChatThread
+          conversationId={id}
+          currentUserId={session.user?.id ?? ""}
+          initialMessages={messages}
+        />
+      </div>
     </div>
   )
 }

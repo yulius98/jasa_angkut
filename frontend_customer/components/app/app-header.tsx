@@ -26,7 +26,9 @@ export function AppHeader({
   return (
     <header
       className={cn(
-        "sticky top-0 z-30 border-b bg-background/95 pt-safe backdrop-blur supports-[backdrop-filter]:bg-background/80",
+        // Header mobile. Pada desktop (>= lg) digantikan DesktopPageHeader,
+        // jadi disembunyikan agar tampilan handphone tetap sama.
+        "sticky top-0 z-30 border-b bg-background/95 pt-safe backdrop-blur supports-[backdrop-filter]:bg-background/80 lg:hidden",
         className
       )}
     >

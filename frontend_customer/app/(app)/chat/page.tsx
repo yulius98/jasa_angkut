@@ -2,6 +2,7 @@ import Link from "next/link"
 import { MessageCircle } from "lucide-react"
 
 import { AppHeader } from "@/components/app/app-header"
+import { DesktopPageHeader } from "@/components/app/desktop-page-header"
 import { SupportButton } from "@/components/chat/support-button"
 import { EmptyState } from "@/components/shared/empty-state"
 import { ErrorState } from "@/components/shared/error-state"
@@ -30,36 +31,74 @@ export default async function ChatPage() {
   }
 
   return (
-    <div>
-      <AppHeader title="Chat" subtitle={session.user?.name} />
+    <>
+      {/* ===== Handphone (< lg): tidak diubah ===== */}
+      <div className="lg:hidden">
+        <AppHeader title="Chat" subtitle={session.user?.name} />
 
-      <div className="grid gap-4 px-4 py-4">
-        <SupportButton className="h-11 w-full" />
+        <div className="grid gap-4 px-4 py-4">
+          <SupportButton className="h-11 w-full" />
 
-        {error ? (
-          <ErrorState description={error} />
-        ) : conversations.length === 0 ? (
-          <EmptyState
-            icon={MessageCircle}
-            title="Belum ada percakapan"
-            description="Mulai chat dengan mitra dari halaman pesanan, atau hubungi dukungan di atas."
-          />
-        ) : (
-          <div className="grid gap-2">
-            {conversations.map((conversation) => (
-              <ConversationRow
-                key={conversation.id}
-                conversation={conversation}
-              />
-            ))}
-          </div>
-        )}
+          {error ? (
+            <ErrorState description={error} />
+          ) : conversations.length === 0 ? (
+            <EmptyState
+              icon={MessageCircle}
+              title="Belum ada percakapan"
+              description="Mulai chat dengan mitra dari halaman pesanan, atau hubungi dukungan di atas."
+            />
+          ) : (
+            <div className="grid gap-2">
+              {conversations.map((conversation) => (
+                <ConversationRow
+                  key={conversation.id}
+                  conversation={conversation}
+                />
+              ))}
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+
+      {/* ===== Desktop/laptop (>= lg) ===== */}
+      <div className="hidden lg:block">
+        <DesktopPageHeader
+          title="Chat"
+          subtitle={session.user?.name}
+          maxWidthClassName="max-w-3xl"
+          actions={<SupportButton variant="outline" className="h-10" />}
+        />
+
+        <div className="mx-auto w-full max-w-3xl px-8 py-6">
+          {error ? (
+            <ErrorState description={error} />
+          ) : conversations.length === 0 ? (
+            <EmptyState
+              icon={MessageCircle}
+              title="Belum ada percakapan"
+              description="Mulai chat dengan mitra dari halaman pesanan, atau hubungi dukungan lewat tombol di atas."
+            />
+          ) : (
+            <div className="grid gap-2">
+              {conversations.map((conversation) => (
+                <ConversationRow
+                  key={conversation.id}
+                  conversation={conversation}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </>
   )
 }
 
-function ConversationRow({ conversation }: { conversation: ConversationSummary }) {
+function ConversationRow({
+  conversation,
+}: {
+  conversation: ConversationSummary
+}) {
   const other =
     conversation.type === "SUPPORT"
       ? { name: "Dukungan Jasa Antar", role: null }
@@ -71,7 +110,7 @@ function ConversationRow({ conversation }: { conversation: ConversationSummary }
 
   return (
     <Link href={`/chat/${conversation.id}`} className="block">
-      <Card className="flex-row items-center gap-3 p-4 transition-colors active:bg-muted/50">
+      <Card className="flex-row items-center gap-3 p-4 transition-colors active:bg-muted/50 lg:hover:bg-muted/50">
         <Avatar className="size-11 rounded-full">
           <AvatarFallback className="bg-primary/10 text-primary">
             {(other.name ?? "?").slice(0, 1).toUpperCase()}

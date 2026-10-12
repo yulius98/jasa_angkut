@@ -2,6 +2,7 @@ import Link from "next/link"
 import { ClipboardList, Plus } from "lucide-react"
 
 import { AppHeader } from "@/components/app/app-header"
+import { DesktopPageHeader } from "@/components/app/desktop-page-header"
 import { OrderCard } from "@/components/orders/order-card"
 import { EmptyState } from "@/components/shared/empty-state"
 import { ErrorState } from "@/components/shared/error-state"
@@ -62,65 +63,143 @@ export default async function OrdersPage({
   const filtered = filterOrders(orders, tab)
 
   return (
-    <div>
-      <AppHeader
-        title="Pesanan Saya"
-        subtitle={session.user?.name}
-        action={
-          <Button
-            size="icon"
-            variant="ghost"
-            aria-label="Pesan baru"
-            nativeButton={false}
-            render={<Link href="/orders/new" />}
-          >
-            <Plus className="size-5" />
-          </Button>
-        }
-      />
-
-      <div className="sticky top-14 z-20 border-b bg-background/95 px-4 py-2 backdrop-blur supports-[backdrop-filter]:bg-background/80">
-        <div className="flex gap-1 rounded-xl bg-muted p-1">
-          {TABS.map((t) => (
-            <Link
-              key={t.key}
-              href={t.key === "all" ? "/orders" : `/orders?tab=${t.key}`}
-              className={cn(
-                "flex-1 rounded-lg py-1.5 text-center text-xs font-medium transition-colors",
-                tab === t.key
-                  ? "bg-background text-foreground shadow-sm"
-                  : "text-muted-foreground"
-              )}
+    <>
+      {/* ===== Handphone (< lg): tidak diubah ===== */}
+      <div className="lg:hidden">
+        <AppHeader
+          title="Pesanan Saya"
+          subtitle={session.user?.name}
+          action={
+            <Button
+              size="icon"
+              variant="ghost"
+              aria-label="Pesan baru"
+              nativeButton={false}
+              render={<Link href="/orders/new" />}
             >
-              {t.label}
-            </Link>
-          ))}
+              <Plus className="size-5" />
+            </Button>
+          }
+        />
+
+        <div className="sticky top-14 z-20 border-b bg-background/95 px-4 py-2 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+          <OrdersTabs tab={tab} />
+        </div>
+
+        <div className="grid gap-3 px-4 py-4">
+          <OrdersBody
+            error={error}
+            orders={filtered}
+            tab={tab}
+            gridClassName="grid gap-3"
+          />
         </div>
       </div>
 
-      <div className="grid gap-3 px-4 py-4">
-        {error ? (
-          <ErrorState description={error} />
-        ) : filtered.length === 0 ? (
-          <EmptyState
-            icon={ClipboardList}
-            title="Tidak ada pesanan"
-            description={
-              tab === "all"
-                ? "Pesanan yang kamu buat akan muncul di sini."
-                : "Belum ada pesanan pada kategori ini."
-            }
-            action={
-              <Button nativeButton={false} render={<Link href="/orders/new" />}>
-                <Plus className="size-4" />
-                Pesan Sekarang
-              </Button>
-            }
-          />
-        ) : (
-          filtered.map((order) => <OrderCard key={order.id} order={order} />)
-        )}
+      {/* ===== Desktop/laptop (>= lg) ===== */}
+      <div className="hidden lg:block">
+        <DesktopPageHeader
+          title="Pesanan Saya"
+          subtitle={session.user?.name}
+          maxWidthClassName="max-w-5xl"
+          actions={
+            <Button
+              className="h-10 gap-2 px-4"
+              nativeButton={false}
+              render={<Link href="/orders/new" />}
+            >
+              <Plus className="size-4" />
+              Pesan Baru
+            </Button>
+          }
+        />
+
+        <div className="mx-auto w-full max-w-5xl px-8 py-6">
+          <div className="max-w-md">
+            <OrdersTabs tab={tab} size="md" />
+          </div>
+          <div className="mt-5">
+            <OrdersBody
+              error={error}
+              orders={filtered}
+              tab={tab}
+              gridClassName="grid gap-4 lg:grid-cols-2"
+            />
+          </div>
+        </div>
       </div>
+    </>
+  )
+}
+
+function OrdersTabs({
+  tab,
+  size = "sm",
+}: {
+  tab: TabKey
+  size?: "sm" | "md"
+}) {
+  return (
+    <div className="flex gap-1 rounded-xl bg-muted p-1">
+      {TABS.map((t) => (
+        <Link
+          key={t.key}
+          href={t.key === "all" ? "/orders" : `/orders?tab=${t.key}`}
+          className={cn(
+            "flex-1 rounded-lg py-1.5 text-center font-medium transition-colors",
+            size === "md" ? "text-sm" : "text-xs",
+            tab === t.key
+              ? "bg-background text-foreground shadow-sm"
+              : "text-muted-foreground"
+          )}
+        >
+          {t.label}
+        </Link>
+      ))}
+    </div>
+  )
+}
+
+function OrdersBody({
+  error,
+  orders,
+  tab,
+  gridClassName,
+}: {
+  error: string | null
+  orders: OrderListItem[]
+  tab: TabKey
+  gridClassName: string
+}) {
+  if (error) {
+    return <ErrorState description={error} />
+  }
+
+  if (orders.length === 0) {
+    return (
+      <EmptyState
+        icon={ClipboardList}
+        title="Tidak ada pesanan"
+        description={
+          tab === "all"
+            ? "Pesanan yang kamu buat akan muncul di sini."
+            : "Belum ada pesanan pada kategori ini."
+        }
+        action={
+          <Button nativeButton={false} render={<Link href="/orders/new" />}>
+            <Plus className="size-4" />
+            Pesan Sekarang
+          </Button>
+        }
+      />
+    )
+  }
+
+  return (
+    <div className={gridClassName}>
+      {orders.map((order) => (
+        <OrderCard key={order.id} order={order} />
+      ))}
     </div>
   )
 }

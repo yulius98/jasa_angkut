@@ -5,6 +5,7 @@ import {
   ACCESS_TOKEN_COOKIE,
   BACKEND_URL,
   REFRESH_TOKEN_COOKIE,
+  SESSION_MAX_AGE,
   USER_COOKIE,
 } from "@/lib/config"
 
@@ -65,7 +66,9 @@ export async function persistRefreshedTokens(
   tokens: { accessToken: string; refreshToken: string }
 ): Promise<void> {
   store.set(ACCESS_TOKEN_COOKIE, tokens.accessToken, tokenCookieOptions(ACCESS_TOKEN_MAX_AGE))
-  store.set(REFRESH_TOKEN_COOKIE, tokens.refreshToken, tokenCookieOptions(ACCESS_TOKEN_MAX_AGE))
+  // Refresh token berlaku 7 hari (sama seperti saat login) — jangan pakai umur
+  // access token, karena sesi akan berakhir tiap ~14 menit.
+  store.set(REFRESH_TOKEN_COOKIE, tokens.refreshToken, tokenCookieOptions(SESSION_MAX_AGE))
 }
 
 function getErrorMessage(status: number, body: unknown): string {

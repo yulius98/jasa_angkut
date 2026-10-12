@@ -1,12 +1,11 @@
 "use client"
 
 import { useCallback, useEffect, useRef, useState } from "react"
-import { Navigation, NavigationOff, RadioTower } from "lucide-react"
+import { Navigation, NavigationOff, RadioTower, Square } from "lucide-react"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { Spinner } from "@/components/ui/spinner"
 import { cn } from "cn"
 
 const MIN_INTERVAL_MS = 8_000
@@ -131,7 +130,7 @@ export function LocationTracker({
           className="gap-2"
         >
           {watching ? (
-            <Spinner />
+            <Square className="size-4 fill-current" />
           ) : (
             <Navigation className="size-4" />
           )}
