@@ -25,8 +25,19 @@ import { CANCELLABLE_STATUSES, isValidTransition } from './order-status-flow.js'
 
 const INCLUDE_DETAIL = {
   partner: { select: { id: true, rating: true, user: { select: { name: true, phone: true } } } },
+  customer: { select: { id: true, user: { select: { name: true, phone: true } } } },
   vehicle: { omit: { stnkPhotoUrl: true, photoUrl: true } },
   statusHistory: { orderBy: { createdAt: 'asc' as const } },
+} as const;
+
+// Ringkasan relasi untuk daftar order (list) supaya tabel admin tidak hanya
+// menampilkan UUID partner/vehicle/customer.
+const INCLUDE_LIST = {
+  partner: { select: { id: true, rating: true, user: { select: { name: true, phone: true } } } },
+  customer: { select: { id: true, user: { select: { name: true, phone: true } } } },
+  vehicle: {
+    select: { id: true, type: true, plateNumber: true, brand: true, model: true },
+  },
 } as const;
 
 @Injectable()
@@ -103,6 +114,21 @@ export class OrdersService {
   }
 
   // ---------- partner ----------
+
+  // Daftar order yang ditugaskan ke partner ini (aktif maupun riwayat),
+  // dengan filter status opsional. Dipakai aplikasi mitra.
+  async listPartnerOrders(userId: string, query: ListOrdersQuery) {
+    const partner = await this.prisma.partner.findUnique({ where: { userId } });
+    if (!partner)
+      throw new NotFoundException('Profil partner tidak ditemukan');
+    return this.paginate(
+      {
+        partnerId: partner.id,
+        ...(query.status ? { status: query.status } : {}),
+      },
+      query,
+    );
+  }
 
   // Daftar order PENDING yang tipe kendaraannya cocok dengan salah satu
   // kendaraan aktif milik partner ini. Partner harus APPROVED & online untuk melihatnya.
@@ -306,6 +332,7 @@ export class OrdersService {
         orderBy: { createdAt: 'desc' },
         skip: (page - 1) * limit,
         take: limit,
+        include: INCLUDE_LIST,
       }),
       this.prisma.order.count({ where }),
     ]);

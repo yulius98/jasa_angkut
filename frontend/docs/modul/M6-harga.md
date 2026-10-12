@@ -2,7 +2,7 @@
 
 **Tujuan:** admin mengelola zona tarif dan kode promo.
 
-**Status:** ⬜ Belum · **Bergantung pada:** M0, M1
+**Status:** ✅ Selesai · **Bergantung pada:** M0, M1
 
 ---
 
@@ -55,10 +55,10 @@ Field promo: `code` (`^[A-Z0-9_-]{3,30}$`, hanya saat create), `type`
 
 ## Acceptance Criteria
 
-- [ ] List zona & promo tampil.
-- [ ] Create/update zona berhasil; deactivate mengubah `isActive=false`.
-- [ ] Create promo memvalidasi regex kode & tanggal; error backend tampil.
-- [ ] Update promo tidak mengirim/mengubah `code`.
-- [ ] Validasi form (angka positif, desimal ≤2, tanggal) berjalan.
-- [ ] Setelah aksi, tabel diperbarui.
-- [ ] `pnpm lint` & `pnpm build` lolos.
+- [x] List zona & promo tampil.
+- [x] Create/update zona berhasil; deactivate mengubah `isActive=false`.
+- [x] Create promo memvalidasi regex kode & tanggal; error backend tampil.
+- [x] Update promo tidak mengirim/mengubah `code`.
+- [x] Validasi form (angka positif, desimal ≤2, tanggal) berjalan.
+- [x] Setelah aksi, tabel diperbarui.
+- [x] `pnpm lint` & `pnpm build` lolos.

@@ -149,11 +149,23 @@ export const PROMO_TYPE_META: Record<PromoType, StatusMeta> = {
   FIXED_AMOUNT: { label: "Nominal", variant: "secondary" },
 }
 
+export const VEHICLE_TYPES: VehicleType[] = Object.keys(
+  VEHICLE_TYPE_META
+) as VehicleType[]
+
+export const PROMO_TYPES: PromoType[] = Object.keys(
+  PROMO_TYPE_META
+) as PromoType[]
+
 export const DISPUTE_STATUS_META: Record<DisputeStatus, StatusMeta> = {
   open: { label: "Terbuka", variant: "secondary" },
   resolved: { label: "Selesai", variant: "default" },
   rejected: { label: "Ditolak", variant: "destructive" },
 }
+
+export const DISPUTE_STATUSES: DisputeStatus[] = Object.keys(
+  DISPUTE_STATUS_META
+) as DisputeStatus[]
 
 export const WITHDRAWAL_STATUS_META: Record<WithdrawalStatus, StatusMeta> = {
   pending: { label: "Menunggu", variant: "secondary" },

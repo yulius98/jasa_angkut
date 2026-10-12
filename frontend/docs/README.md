@@ -41,7 +41,7 @@ Browser ──(cookie httpOnly)──► Next.js Route Handler / Server Componen
   membaca cookie, meneruskan ke backend, lalu mengembalikan hasil. Handler juga
   yang menangani penyimpanan/refresh cookie.
 - **Refresh token**: access token berlaku 900 detik (15 menit). Rotasi refresh token
-  ditangani di Route Handler/`middleware.ts`.
+  ditangani di Route Handler/`proxy.ts`.
 
 ---
 
@@ -69,6 +69,8 @@ frontend/
 │   ├── (dashboard)/
 │   │   ├── layout.tsx              # shell: sidebar + topbar + proteksi
 │   │   ├── dashboard/page.tsx      # M2
+│   │   ├── customers/page.tsx      # M9
+│   │   ├── admins/page.tsx         # M10
 │   │   ├── partners/
 │   │   │   ├── page.tsx            # M3
 │   │   │   └── [id]/page.tsx
@@ -93,7 +95,7 @@ frontend/
 │   └── format.ts                   # IDR, tanggal, label enum
 ├── types/                          # mirror model & enum Prisma
 ├── docs/                           # dokumentasi ini
-└── middleware.ts                   # proteksi route + cek role
+└── proxy.ts                        # proteksi route + cek role
 ```
 
 ---
@@ -123,11 +125,13 @@ frontend/
 | M1 | Autentikasi & Proteksi | `/login` | `POST /auth/login`, `/refresh`, `/logout`, `GET /auth/me` | ✅ Selesai |
 | M2 | Dashboard Ringkasan | `/dashboard` | `GET /admin/dashboard` | ✅ Selesai |
 | M3 | Verifikasi Partner | `/partners` | `GET /partners`, `GET /partners/:id`, `approve/reject/suspend`, `documents` | ✅ Selesai |
-| M4 | Manajemen Order (+ M11 Tracking) | `/orders` | `GET /orders`, `GET /orders/:id`, `tracking/*` | ⬜ Belum |
-| M5 | Pembayaran | `/payments` | `GET /payments`, `PATCH /payments/:id/mark-paid` | ⬜ Belum |
-| M6 | Harga (Zona & Promo) | `/pricing/*` | `GET/POST/PATCH /pricing/zones`, `/promos` | ⬜ Belum |
-| M7 | Dispute | `/disputes` | `GET /admin/disputes`, `PATCH /admin/disputes/:id/resolve` | ⬜ Belum |
-| M8 | Pencairan (Withdrawal) | `/withdrawals` | `GET/POST /admin/withdrawals`, `refresh-status` | ⬜ Belum |
+| M4 | Manajemen Order (+ M11 Tracking) | `/orders` | `GET /orders`, `GET /orders/:id`, `tracking/*` | ✅ Selesai |
+| M5 | Pembayaran | `/payments` | `GET /payments`, `PATCH /payments/:id/mark-paid`, `GET/PATCH /payments/settings` | ✅ Selesai |
+| M6 | Harga (Zona & Promo) | `/pricing/zones`, `/pricing/promos` | `GET/POST/PATCH zones`, `GET/POST/PATCH promos` | ✅ Selesai |
+| M7 | Dispute | `/disputes` | `GET /admin/disputes`, `PATCH /admin/disputes/:id/resolve` | ✅ Selesai |
+| M8 | Pencairan (Withdrawal) | `/withdrawals` | `GET/POST /admin/withdrawals`, `refresh-status` | ✅ Selesai |
+| M9 | Pelanggan | `/customers` | `GET /admin/customers` | ✅ Selesai |
+| M10 | Kelola Admin | `/admins` | `GET/POST/PATCH/DELETE /admin/admins` | ✅ Selesai |
 
 Keterangan status: ⬜ Belum · 🟡 Sedang dikerjakan · ✅ Selesai
 
@@ -150,6 +154,13 @@ memerlukan header `Authorization: Bearer <accessToken>`.
 | Method | Path | Role |
 |---|---|---|
 | GET | `/admin/dashboard` | ADMIN, SUPER_ADMIN |
+| GET | `/admin/customers` | ADMIN, SUPER_ADMIN |
+| GET | `/admin/admins` | ADMIN, SUPER_ADMIN |
+| POST | `/admin/admins` | ADMIN, SUPER_ADMIN |
+| PATCH | `/admin/admins/:id` | ADMIN, SUPER_ADMIN |
+| PATCH | `/admin/admins/:id/status` | ADMIN, SUPER_ADMIN |
+| PATCH | `/admin/admins/:id/password` | ADMIN, SUPER_ADMIN |
+| DELETE | `/admin/admins/:id` | ADMIN, SUPER_ADMIN |
 | GET | `/admin/disputes` | ADMIN, SUPER_ADMIN |
 | PATCH | `/admin/disputes/:id/resolve` | ADMIN, SUPER_ADMIN |
 | GET | `/admin/withdrawals` | ADMIN, SUPER_ADMIN |
@@ -160,6 +171,7 @@ memerlukan header `Authorization: Bearer <accessToken>`.
 | Method | Path | Role |
 |---|---|---|
 | GET | `/partners` | ADMIN, SUPER_ADMIN |
+| POST | `/partners` (multipart) | ADMIN, SUPER_ADMIN |
 | GET | `/partners/:id` | ADMIN, SUPER_ADMIN |
 | PATCH | `/partners/:id/approve` | ADMIN, SUPER_ADMIN |
 | PATCH | `/partners/:id/reject` | ADMIN, SUPER_ADMIN |
@@ -201,9 +213,12 @@ memerlukan header `Authorization: Bearer <accessToken>`.
 
 ## 7. Batasan dan Kendala
 
-- **Tidak ada endpoint** untuk: manajemen user/customer, manajemen admin, payout partner
-  (`Payout` model ada tanpa controller), dan notifikasi. Modul terkait tidak dibuat.
-- **Tidak ada endpoint pencarian** di list; pencarian dilakukan client-side bila perlu.
+- **Tidak ada endpoint** untuk: manajemen user/customer umum (kecuali pembuatan partner
+  via `POST /partners`, **daftar pelanggan read-only** via `GET /admin/customers`, dan
+  **kelola akun admin-level** via `/admin/admins`), payout partner (`Payout` model ada
+  tanpa controller), dan notifikasi. Modul terkait tidak dibuat.
+- **Pencarian**: server-side (`?search=`) tersedia pada `GET /admin/customers` dan
+  `GET /admin/admins`; list lain tanpa endpoint pencarian → filter client-side bila perlu.
 - **Dokumen (KTP/SIM/STNK)** hanya bisa diambil lewat endpoint ber-Auth dan mengembalikan
   stream gambar → harus lewat Route Handler proxy, bukan `<img src>` langsung.
 - **Google Maps** butuh API key dengan billing aktif dan hanya dapat dirender di

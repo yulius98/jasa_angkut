@@ -19,6 +19,11 @@ import type { MidtransNotificationBody } from './dto/midtrans-notification.dto.j
 
 const DEFAULT_COMMISSION_RATE = 0.15;
 
+// Key penyimpanan gateway pembayaran default di tabel system_settings.
+// Nilainya salah satu dari PaymentProvider (MIDTRANS | XENDIT).
+const SETTING_PAYMENT_GATEWAY = 'payment_gateway';
+const DEFAULT_PAYMENT_GATEWAY = PaymentProvider.MIDTRANS;
+
 @Injectable()
 export class PaymentsService {
   constructor(
@@ -26,6 +31,30 @@ export class PaymentsService {
     private midtrans: MidtransClientService,
     private xendit: XenditClientService,
   ) {}
+
+  // Setting gateway global yang dipilih admin. Kalau belum pernah disimpan
+  // (atau isinya tidak valid), jatuh kembali ke MIDTRANS -- perilaku lama.
+  async getPaymentGatewaySetting(): Promise<PaymentProvider> {
+    const setting = await this.prisma.systemSetting.findUnique({
+      where: { key: SETTING_PAYMENT_GATEWAY },
+    });
+    if (setting && setting.value === PaymentProvider.XENDIT) {
+      return PaymentProvider.XENDIT;
+    }
+    if (setting && setting.value === PaymentProvider.MIDTRANS) {
+      return PaymentProvider.MIDTRANS;
+    }
+    return DEFAULT_PAYMENT_GATEWAY;
+  }
+
+  async updatePaymentGatewaySetting(gateway: PaymentProvider): Promise<PaymentProvider> {
+    await this.prisma.systemSetting.upsert({
+      where: { key: SETTING_PAYMENT_GATEWAY },
+      update: { value: gateway },
+      create: { key: SETTING_PAYMENT_GATEWAY, value: gateway },
+    });
+    return gateway;
+  }
 
   async create(userId: string, dto: CreatePaymentDto) {
     const customer = await this.prisma.customerProfile.findUnique({
@@ -63,10 +92,10 @@ export class PaymentsService {
       });
     }
 
-    // Non-cash: pilih provider (default MIDTRANS kalau tidak diisi), minta dia
-    // buatkan transaksi, simpan Payment PENDING -- status sebenarnya baru
-    // dikonfirmasi lewat webhook masing-masing provider.
-    const provider = dto.provider ?? PaymentProvider.MIDTRANS;
+    // Non-cash: pilih provider dari setting global yang dipilih admin,
+    // kecuali client mengirim override spesifik untuk order ini.
+    // Status sebenarnya baru dikonfirmasi lewat webhook masing-masing provider.
+    const provider = dto.provider ?? (await this.getPaymentGatewaySetting());
 
     if (provider === PaymentProvider.XENDIT) {
       const invoice = await this.xendit.createInvoice({

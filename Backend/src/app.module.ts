@@ -14,6 +14,7 @@ import { RatingsModule } from './ratings/ratings.module.js';
 import { PaymentsModule } from './payments/payments.module.js';
 import { AdminModule } from './admin/admin.module.js';
 import { WithdrawalsModule } from './withdrawals/withdrawals.module.js';
+import { ChatModule } from './chat/chat.module.js';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { WithdrawalsModule } from './withdrawals/withdrawals.module.js';
     PaymentsModule,
     AdminModule,
     WithdrawalsModule,
+    ChatModule,
   ],
   controllers: [AppController],
   providers: [AppService],

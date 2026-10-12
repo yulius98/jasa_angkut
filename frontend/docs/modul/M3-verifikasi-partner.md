@@ -12,6 +12,7 @@ lalu menyetujui, menolak, atau mensuspend.
 | Method | Path | Query/Body | Keterangan |
 |---|---|---|---|
 | GET | `/partners` | `status?`, `page?`, `limit?` (maks 100) | `{ data, meta }` |
+| POST | `/partners` | multipart (lihat bawah) | admin buat partner langsung APPROVED + 1 kendaraan |
 | GET | `/partners/:id` | – | detail + `user` + `vehicles` |
 | PATCH | `/partners/:id/approve` | – | wajib ada ≥1 kendaraan aktif |
 | PATCH | `/partners/:id/reject` | `{ reason }` | hanya status PENDING |
@@ -20,6 +21,14 @@ lalu menyetujui, menolak, atau mensuspend.
 
 Catatan: field `ktpPhotoUrl`/`simPhotoUrl` **tidak** dikirim di JSON (di-omit);
 dokumen hanya via endpoint dokumen. `PartnerStatus`: `PENDING|APPROVED|REJECTED|SUSPENDED`.
+
+`POST /partners` (multipart/form-data) — field: `name`, `email`, `phone`, `password`,
+`ktpNumber` (16 digit), `simNumber` (12-14 digit), `vehicleType`
+(`MOTORCYCLE|PICKUP|BOX_TRUCK|LARGE_TRUCK`), `plateNumber`, `brand`, `model`,
+`maxWeightKg` (≤99999), `maxVolumeM3` (≤999); file: `ktpPhoto`, `simPhoto`, `stnkPhoto`
+(wajib) + `photo` (opsional; maks 5 MB/gambar, JPG/PNG/WEBP). Membuat `User` role
+`PARTNER` (verified) + `Partner` `APPROVED` (dicatat `approvedBy`/`approvedAt`) + 1
+`Vehicle` aktif. Email/telepon/KTP/SIM/plat duplikat → 409.
 
 ---
 
@@ -63,6 +72,11 @@ dokumen hanya via endpoint dokumen. `PartnerStatus`: `PENDING|APPROVED|REJECTED|
   APPROVED → Suspend. Alasan (min 5 char) divalidasi di sisi client & backend.
 - Tipe `Partner`/`Vehicle` pada FE men-jalankan omit backend: `ktpPhotoUrl`,
   `simPhotoUrl`, `photoUrl`, `stnkPhotoUrl` tidak lagi ada di tipe (dokumen hanya via proxy).
+- **Tambah Partner** (admin): tombol di header `/partners` → `CreatePartnerDialog`
+  (`react-hook-form` + zod untuk field teks, `useState` untuk 3-4 file). Submit membangun
+  `FormData` dan memanggil Route Handler `app/api/admin/partners` (`POST`, `serverFetch`
+  `refreshOn401`). `lib/api.ts` tidak men-set `Content-Type` bila body berupa `FormData`
+  agar `fetch` menetapkan boundary multipart. Sukses → `router.refresh()`.
 
 ---
 
@@ -75,4 +89,6 @@ dokumen hanya via endpoint dokumen. `PartnerStatus`: `PENDING|APPROVED|REJECTED|
 - [x] Reject/Suspend meminta alasan dan berhasil.
 - [x] Setelah aksi, data di halaman diperbarui (refresh/redirect).
 - [x] Parameter `type`/`kind` divalidasi (`ktp|sim`, `stnk|photo`).
+- [x] Admin bisa menambah partner (akun + KTP/SIM + 1 kendaraan) dan langsung berstatus APPROVED.
+- [x] Validasi client & server (KTP 16 digit, SIM 12-14 digit, plat, kapasitas, ukuran/tipe file).
 - [x] `pnpm lint` & `pnpm build` lolos.

@@ -2,10 +2,12 @@ import { Module } from '@nestjs/common';
 import { PaymentsModule } from '../payments/payments.module.js';
 import { AdminController } from './admin.controller.js';
 import { AdminService } from './admin.service.js';
+import { AdminsController } from './admins.controller.js';
+import { AdminsService } from './admins.service.js';
 
 @Module({
   imports: [PaymentsModule],
-  controllers: [AdminController],
-  providers: [AdminService],
+  controllers: [AdminController, AdminsController],
+  providers: [AdminService, AdminsService],
 })
 export class AdminModule {}

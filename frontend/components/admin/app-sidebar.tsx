@@ -7,9 +7,11 @@ import {
   ClipboardList,
   LayoutDashboard,
   Scale,
+  ShieldCheck,
   Tag,
   TicketPercent,
   Truck,
+  UserRound,
   Users,
   Wallet,
   type LucideIcon,
@@ -43,6 +45,7 @@ const menuItems: NavItem[] = [
 ]
 
 const operationalItems: NavItem[] = [
+  { title: "Pelanggan", url: "/customers", icon: UserRound },
   { title: "Verifikasi Mitra", url: "/partners", icon: Users },
   { title: "Pesanan", url: "/orders", icon: ClipboardList },
   { title: "Pembayaran", url: "/payments", icon: Wallet },
@@ -53,6 +56,7 @@ const operationalItems: NavItem[] = [
 const configurationItems: NavItem[] = [
   { title: "Zona Harga", url: "/pricing/zones", icon: Tag },
   { title: "Kode Promo", url: "/pricing/promos", icon: TicketPercent },
+  { title: "Kelola Admin", url: "/admins", icon: ShieldCheck },
 ]
 
 function NavGroup({ label, items }: { label: string; items: NavItem[] }) {
@@ -72,6 +76,7 @@ function NavGroup({ label, items }: { label: string; items: NavItem[] }) {
                   isActive={isActive}
                   tooltip={item.title}
                   render={<Link href={item.url} />}
+
                 >
                   <item.icon />
                   <span>{item.title}</span>
@@ -104,6 +109,7 @@ export function AppSidebar(
             <SidebarMenuButton
               size="lg"
               render={<Link href="/dashboard" />}
+
             >
               <div className="grid size-8 shrink-0 place-items-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
                 <Truck />

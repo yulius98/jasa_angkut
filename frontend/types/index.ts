@@ -54,6 +54,29 @@ export const PaymentStatus = {
 } as const
 export type PaymentStatus = (typeof PaymentStatus)[keyof typeof PaymentStatus]
 
+export const PaymentProvider = {
+  MIDTRANS: "MIDTRANS",
+  XENDIT: "XENDIT",
+} as const
+export type PaymentProvider =
+  (typeof PaymentProvider)[keyof typeof PaymentProvider]
+
+export const PAYMENT_PROVIDER_META: Record<
+  PaymentProvider,
+  { label: string; description: string }
+> = {
+  MIDTRANS: {
+    label: "Midtrans",
+    description:
+      "Pembayaran via Snap Midtrans: VA, e-wallet, kartu kredit, dan retail.",
+  },
+  XENDIT: {
+    label: "Xendit",
+    description:
+      "Pembayaran via Invoice Xendit: VA, e-wallet, kartu kredit, dan QRIS.",
+  },
+}
+
 export const PromoType = {
   PERCENTAGE: "PERCENTAGE",
   FIXED_AMOUNT: "FIXED_AMOUNT",
@@ -108,6 +131,18 @@ export interface SessionUser {
   name: string
   email: string
   role: UserRole
+}
+
+export interface AdminListItem {
+  id: string
+  name: string
+  email: string
+  phone: string
+  role: UserRole
+  isActive: boolean
+  isVerified: boolean
+  createdAt: string
+  adminProfile: { tier: string } | null
 }
 
 export type PartnerDocType = "ktp" | "sim"
@@ -230,12 +265,68 @@ export interface CustomerProfile {
   user?: User | null
 }
 
+export interface CustomerListItem {
+  id: string
+  name: string
+  email: string
+  phone: string
+  isActive: boolean
+  isVerified: boolean
+  createdAt: string
+  _count: { addresses: number }
+  customerProfile: {
+    id: string
+    avatarUrl: string | null
+    _count: { orders: number }
+  } | null
+}
+
 export interface OrderStatusHistory {
   id: string
   orderId: string
   status: OrderStatus
   note: string | null
   createdAt: string
+}
+
+export interface OrderPartnerSummary {
+  id: string
+  rating: string
+  user: Pick<User, "name" | "phone">
+}
+
+export interface OrderVehicleSummary {
+  id: string
+  type: VehicleType
+  plateNumber: string
+  brand: string
+  model: string
+}
+
+export interface OrderCustomerSummary {
+  id: string
+  user: Pick<User, "name" | "phone">
+}
+
+/** Baris daftar order (`GET /orders`) — relasi berupa ringkasan. */
+export type OrderListItem = Omit<Order, "partner" | "vehicle" | "customer"> & {
+  partner: OrderPartnerSummary | null
+  vehicle: OrderVehicleSummary | null
+  customer: OrderCustomerSummary | null
+}
+
+/** Detail order (`GET /orders/:id`) + histori status. */
+export type OrderDetail = Omit<Order, "partner" | "vehicle" | "customer"> & {
+  partner: OrderPartnerSummary | null
+  vehicle: Vehicle | null
+  customer: OrderCustomerSummary | null
+  statusHistory: OrderStatusHistory[]
+}
+
+/** Respons `GET /api/proxy/tracking/[orderId]` (latest + history dalam satu call). */
+export interface TrackingSnapshot {
+  latest: TrackingPoint | null
+  history: TrackingPoint[]
 }
 
 export interface TrackingPoint {
@@ -255,6 +346,26 @@ export interface Rating {
   score: number
   comment: string | null
   createdAt: string
+}
+
+export interface PaymentListItem {
+  id: string
+  orderId: string
+  method: PaymentMethod
+  status: PaymentStatus
+  amount: string
+  commissionRate: string
+  commissionAmount: string | null
+  partnerEarning: string | null
+  gatewayProvider: string | null
+  gatewayRefId: string | null
+  paidAt: string | null
+  createdAt: string
+  order?: {
+    orderNumber: string
+    customerId: string
+    partnerId: string | null
+  } | null
 }
 
 export interface Payment {
@@ -296,6 +407,18 @@ export interface Dispute {
   createdAt: string
   resolvedAt: string | null
   order?: Order | null
+}
+
+/** Ringkasan order pada baris daftar dispute (`GET /admin/disputes`). */
+export interface DisputeOrderSummary {
+  orderNumber: string
+  status: OrderStatus
+  finalPrice: string | null
+}
+
+/** Baris daftar dispute (`GET /admin/disputes`) — relasi order berupa ringkasan. */
+export type DisputeListItem = Omit<Dispute, "order"> & {
+  order: DisputeOrderSummary | null
 }
 
 export interface Withdrawal {

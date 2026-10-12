@@ -3,10 +3,11 @@ Backend/.env
 Backend/vendor/
 Backend/node_modules/
 
-# Frontend
-frontend/node_modules/
-frontend/.next/
-frontend/out/
+# Frontends (frontend, frontend_customer, frontend_landingpage, frontend_mitra)
+frontend*/node_modules/
+frontend*/.next/
+frontend*/out/
+next-env.d.ts
 
 # Environment
 .env

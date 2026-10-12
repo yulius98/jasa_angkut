@@ -20,11 +20,15 @@ import { Roles } from '../auth/decorators/roles.decorator.js';
 import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
 import type { AuthUser } from '../common/auth-user.js';
 import { UserRole } from '../generated/prisma/enums.js';
-import { imageUploadOptions } from '../storage/upload.config.js';
+import {
+  imageUploadOptions,
+  partnerCreateUploadOptions,
+} from '../storage/upload.config.js';
 import type { UploadedFileData } from '../storage/storage.service.js';
 import { PartnersService } from './partners.service.js';
 import { PartnerDocumentType } from './partner-document-type.js';
 import { ApplyPartnerDto } from './dto/apply-partner.dto.js';
+import { CreatePartnerAdminDto } from './dto/create-partner-admin.dto.js';
 import { ListPartnersQuery } from './dto/list-partners.query.js';
 import { PartnerReasonDto } from './dto/partner-reason.dto.js';
 import { SetOnlineDto } from './dto/set-online.dto.js';
@@ -65,6 +69,28 @@ export class PartnersController {
   @Roles(UserRole.PARTNER)
   setOnline(@CurrentUser() user: AuthUser, @Body() dto: SetOnlineDto) {
     return this.partners.setOnline(user.userId, dto.isOnline);
+  }
+
+  // Admin membuat akun partner sekaligus (langsung APPROVED + 1 kendaraan)
+  @Post()
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @UseInterceptors(
+    FileFieldsInterceptor(
+      [
+        { name: 'ktpPhoto', maxCount: 1 },
+        { name: 'simPhoto', maxCount: 1 },
+        { name: 'stnkPhoto', maxCount: 1 },
+        { name: 'photo', maxCount: 1 },
+      ],
+      partnerCreateUploadOptions,
+    ),
+  )
+  createByAdmin(
+    @CurrentUser() admin: AuthUser,
+    @Body() dto: CreatePartnerAdminDto,
+    @UploadedFiles() files: Record<string, UploadedFileData[]>,
+  ) {
+    return this.partners.createByAdmin(admin.userId, dto, files);
   }
 
   @Get()

@@ -84,7 +84,10 @@ export async function serverFetch<T = unknown>(
 
   const headers_ = new Headers(init?.headers)
   headers_.set("Accept", "application/json")
-  if (init?.body && !headers_.has("Content-Type")) {
+  // FormData: biarkan fetch menetapkan Content-Type (beserta boundary-nya).
+  const isFormData =
+    typeof FormData !== "undefined" && init?.body instanceof FormData
+  if (init?.body && !isFormData && !headers_.has("Content-Type")) {
     headers_.set("Content-Type", "application/json")
   }
   if (token) {

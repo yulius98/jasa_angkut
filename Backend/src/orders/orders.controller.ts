@@ -47,6 +47,16 @@ export class OrdersController {
     return this.orders.listAvailable(user.userId);
   }
 
+  // Order yang ditugaskan ke partner ini (aktif + riwayat). NB: sebelum ':id'.
+  @Get('partner/me')
+  @Roles(UserRole.PARTNER)
+  listPartnerOrders(
+    @CurrentUser() user: AuthUser,
+    @Query() query: ListOrdersQuery,
+  ) {
+    return this.orders.listPartnerOrders(user.userId, query);
+  }
+
   @Get()
   @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
   listAll(@Query() query: ListOrdersQuery) {

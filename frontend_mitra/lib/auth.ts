@@ -1,0 +1,98 @@
+import type { NextResponse } from "next/server"
+
+import {
+  ACCESS_TOKEN_COOKIE,
+  REFRESH_TOKEN_COOKIE,
+  SESSION_MAX_AGE,
+  USER_COOKIE,
+} from "@/lib/config"
+import { UserRole, type SessionUser } from "@/types"
+
+export const ACCESS_TOKEN_MAX_AGE = 840
+export const REFRESH_TOKEN_MAX_AGE = SESSION_MAX_AGE
+
+function cookieOptions(maxAge: number) {
+  return {
+    httpOnly: true,
+    sameSite: "lax" as const,
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge,
+  }
+}
+
+export function applyAuthCookies(
+  response: NextResponse,
+  tokens: {
+    accessToken: string
+    refreshToken: string
+    user?: SessionUser | null
+  }
+) {
+  response.cookies.set(
+    ACCESS_TOKEN_COOKIE,
+    tokens.accessToken,
+    cookieOptions(ACCESS_TOKEN_MAX_AGE)
+  )
+  response.cookies.set(
+    REFRESH_TOKEN_COOKIE,
+    tokens.refreshToken,
+    cookieOptions(REFRESH_TOKEN_MAX_AGE)
+  )
+  if (tokens.user) {
+    response.cookies.set(
+      USER_COOKIE,
+      JSON.stringify(tokens.user),
+      cookieOptions(REFRESH_TOKEN_MAX_AGE)
+    )
+  }
+}
+
+export function clearAuthCookies(response: NextResponse) {
+  response.cookies.delete(ACCESS_TOKEN_COOKIE)
+  response.cookies.delete(REFRESH_TOKEN_COOKIE)
+  response.cookies.delete(USER_COOKIE)
+}
+
+export function isPartnerRole(role: string | null | undefined): boolean {
+  return role === UserRole.PARTNER
+}
+
+/**
+ * Validasi tujuan redirect pasca-login (`?next=...`) agar tidak bisa dipakai
+ * untuk open redirect. Hanya menerima path internal pada origin yang sama.
+ */
+export function safeNextPath(
+  value: string | null | undefined,
+  fallback = "/home"
+): string {
+  if (
+    value &&
+    value.startsWith("/") &&
+    !value.startsWith("//") &&
+    !value.includes("://")
+  ) {
+    return value
+  }
+  return fallback
+}
+
+export function parseSessionUser(
+  value: string | null | undefined
+): SessionUser | null {
+  if (!value) return null
+  try {
+    const parsed = JSON.parse(value) as Partial<SessionUser>
+    if (
+      typeof parsed.id === "string" &&
+      typeof parsed.name === "string" &&
+      typeof parsed.email === "string" &&
+      typeof parsed.role === "string"
+    ) {
+      return parsed as SessionUser
+    }
+    return null
+  } catch {
+    return null
+  }
+}

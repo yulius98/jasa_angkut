@@ -12,6 +12,7 @@ import { PageHeader } from "@/components/shared/page-header"
 import { StatusBadge } from "@/components/shared/status-badge"
 import { TablePagination } from "@/components/shared/table-pagination"
 import { Button } from "@/components/ui/button"
+import { CreatePartnerButton } from "@/components/partners/create-partner-button"
 import { StatusFilter } from "@/components/partners/status-filter"
 import type { PartnerListItem } from "@/types"
 
@@ -74,21 +75,23 @@ export default async function PartnersPage({
       render: (row) => (
         <div className="grid gap-0.5">
           <span className="font-medium">{row.user.name}</span>
-          <span className="text-xs text-muted-foreground">{row.user.email}</span>
+          <span className="text-xs text-muted-foreground">
+            {row.user.email}
+          </span>
         </div>
       ),
     },
     {
       key: "phone",
       label: "Telepon",
-      render: (row) => <span className="tabular-nums">{row.user.phone ?? "-"}</span>,
+      render: (row) => (
+        <span className="tabular-nums">{row.user.phone ?? "-"}</span>
+      ),
     },
     {
       key: "status",
       label: "Status",
-      render: (row) => (
-        <StatusBadge meta={PARTNER_STATUS_META[row.status]} />
-      ),
+      render: (row) => <StatusBadge meta={PARTNER_STATUS_META[row.status]} />,
     },
     {
       key: "vehicles",
@@ -101,12 +104,12 @@ export default async function PartnersPage({
       key: "rating",
       label: "Rating",
       render: (row) => {
-        const rating = Number(row.rating)
+        const rating = Number(row.rating);
         return (
           <span className="tabular-nums">
             {Number.isFinite(rating) && rating > 0 ? rating.toFixed(1) : "—"}
           </span>
-        )
+        );
       },
     },
     {
@@ -122,20 +125,27 @@ export default async function PartnersPage({
       headerClassName: "w-20",
       cellClassName: "text-right",
       render: (row) => (
-        <Button render={<Link href={`/partners/${row.id}`} />} variant="outline" size="sm" className="h-7">
+        <Button
+          render={<Link href={`/partners/${row.id}`} />}
+          variant="outline"
+          size="sm"
+          className="h-7"
+          nativeButton={false}
+        >
           Detail
         </Button>
       ),
     },
-  ]
+  ];
 
   return (
     <>
       <PageHeader
-        title="Verifikasi Mitra"
+        title="Daftar Mitra"
         description="Tinjau dan kelola pengajuan mitra."
       >
         <StatusFilter value={status ?? "ALL"} basePath="/partners" />
+        <CreatePartnerButton />
       </PageHeader>
 
       <DataTable
@@ -157,5 +167,5 @@ export default async function PartnersPage({
         buildHref={(p) => buildUrl(status, p)}
       />
     </>
-  )
+  );
 }

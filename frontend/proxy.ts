@@ -9,12 +9,14 @@ import {
 
 const protectedRoutes = [
   "/dashboard",
+  "/customers",
   "/partners",
   "/orders",
   "/payments",
   "/pricing",
   "/disputes",
   "/withdrawals",
+  "/admins",
 ]
 
 function isProtected(pathname: string): boolean {
@@ -82,11 +84,13 @@ export const config = {
   matcher: [
     "/login",
     "/dashboard/:path*",
+    "/customers/:path*",
     "/partners/:path*",
     "/orders/:path*",
     "/payments/:path*",
     "/pricing/:path*",
     "/disputes/:path*",
     "/withdrawals/:path*",
+    "/admins/:path*",
   ],
 }

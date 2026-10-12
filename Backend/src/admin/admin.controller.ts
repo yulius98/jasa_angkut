@@ -7,6 +7,7 @@ import type { AuthUser } from '../common/auth-user.js';
 import { UserRole } from '../generated/prisma/enums.js';
 import { AdminService } from './admin.service.js';
 import { ListDisputesQuery } from './dto/list-disputes.query.js';
+import { ListCustomersQuery } from './dto/list-customers.query.js';
 import { ResolveDisputeDto } from './dto/resolve-dispute.dto.js';
 import { BalanceQueryDto } from './dto/balance-query.dto.js';
 import { ListXenditTransactionsQuery } from './dto/list-xendit-transactions.query.js';
@@ -35,6 +36,11 @@ export class AdminController {
   @Get('xendit/transactions')
   listXenditTransactions(@Query() query: ListXenditTransactionsQuery) {
     return this.admin.listXenditTransactions(query);
+  }
+
+  @Get('customers')
+  listCustomers(@Query() query: ListCustomersQuery) {
+    return this.admin.listCustomers(query);
   }
 
   @Get('disputes')

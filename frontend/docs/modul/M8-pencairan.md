@@ -3,7 +3,7 @@
 **Tujuan:** admin membuat permintaan pencairan dana ke rekening bank dan memantau
 statusnya.
 
-**Status:** ⬜ Belum · **Bergantung pada:** M0, M1
+**Status:** ✅ Selesai · **Bergantung pada:** M0, M1
 
 ---
 
@@ -49,13 +49,34 @@ atau status asli Iris setelah sinkron).
 
 ---
 
+## Catatan Implementasi
+
+- Halaman `app/(dashboard)/withdrawals/page.tsx` (Server Component) memakai
+  `serverFetch` `GET /admin/withdrawals` dengan `{ cache: "no-store" }`. Endpoint
+  mengembalikan array (bukan `{ data, meta }`), jadi tanpa pagination.
+- Mutasi lewat server action `lib/actions/withdrawals.ts`: `createWithdrawal`
+  (`POST /admin/withdrawals`) dan `refreshWithdrawalStatus`
+  (`PATCH /admin/withdrawals/:id/refresh-status`); client lalu `router.refresh()`.
+- `CreateWithdrawalDialog` (react-hook-form + zod) memilih provider lewat radio
+  cards; hint `bankCode` berubah sesuai provider (IRIS kode bank biasa, XENDIT
+  channel code). Nomor rekening & jumlah diperlakukan sebagai string/numeric.
+  Validasi mengikuti DTO: `beneficiaryName` ≤100, `bankCode` ≤20,
+  `bankAccountNumber` ≤50, `amount` bilangan bulat >0, `notes` ≤255.
+- `WithdrawalActions` menyediakan **Refresh Status** dengan konfirmasi.
+- Banner di header menegaskan pembuatan payout tidak otomatis menyetujui dana
+  (pemisahan Creator/Approver).
+- Status provider ditampilkan via `withdrawalStatusMeta` (fallback label apa adanya
+  untuk status asli provider yang belum dipetakan).
+
+---
+
 ## Acceptance Criteria
 
-- [ ] List withdrawal tampil (termasuk metadata provider).
-- [ ] Form create memvalidasi semua field; hint `bankCode` berubah sesuai provider.
-- [ ] Create berhasil membuat record dan menampilkan status dari provider.
-- [ ] Kegagalan provider (mis. kredensial/saldo) menampilkan pesan error backend,
-  record tercatat sebagai `failed`.
-- [ ] Refresh status memperbarui status baris.
-- [ ] Ada banner informasi soal tidak adanya auto-approve.
-- [ ] `pnpm lint` & `pnpm build` lolos.
+- [x] List withdrawal tampil (termasuk metadata provider).
+- [x] Form create memvalidasi semua field; hint `bankCode` berubah sesuai provider.
+- [x] Create berhasil membuat record dan menampilkan status dari provider.
+- [x] Kegagalan provider (mis. kredensial/saldo) menampilkan pesan error backend,
+      record tercatat sebagai `failed`.
+- [x] Refresh status memperbarui status baris.
+- [x] Ada banner informasi soal tidak adanya auto-approve.
+- [x] `pnpm lint` & `pnpm build` lolos.

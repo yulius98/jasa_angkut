@@ -5,12 +5,14 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { StorageService, type UploadedFileData } from '../storage/storage.service.js';
 import type { AuthUser } from '../common/auth-user.js';
 import { PartnerStatus, UserRole } from '../generated/prisma/enums.js';
 import { PartnerDocumentType } from './partner-document-type.js';
 import { ApplyPartnerDto } from './dto/apply-partner.dto.js';
+import { CreatePartnerAdminDto } from './dto/create-partner-admin.dto.js';
 import { ListPartnersQuery } from './dto/list-partners.query.js';
 
 // Key file di storage tidak pernah dikirim ke client; dokumen hanya bisa
@@ -132,6 +134,135 @@ export class PartnersService {
   }
 
   // ---------- sisi admin ----------
+
+  // Admin membuat akun partner sekaligus: User (role PARTNER) + Partner
+  // (langsung APPROVED) + 1 kendaraan, dalam satu operasi.
+  async createByAdmin(
+    adminUserId: string,
+    dto: CreatePartnerAdminDto,
+    files: Record<string, UploadedFileData[]>,
+  ) {
+    const ktp = files?.ktpPhoto?.[0];
+    const sim = files?.simPhoto?.[0];
+    const stnk = files?.stnkPhoto?.[0];
+    const photo = files?.photo?.[0];
+    if (!ktp || !sim) {
+      throw new BadRequestException('Foto KTP dan SIM wajib diunggah');
+    }
+    if (!stnk) {
+      throw new BadRequestException('Foto STNK kendaraan wajib diunggah');
+    }
+
+    const existingUser = await this.prisma.user.findFirst({
+      where: { OR: [{ email: dto.email }, { phone: dto.phone }] },
+      select: { id: true },
+    });
+    if (existingUser) {
+      throw new ConflictException('Email atau nomor telepon sudah terdaftar');
+    }
+
+    const existingPartner = await this.prisma.partner.findFirst({
+      where: {
+        OR: [{ ktpNumber: dto.ktpNumber }, { simNumber: dto.simNumber }],
+      },
+      select: { id: true },
+    });
+    if (existingPartner) {
+      throw new ConflictException('Nomor KTP atau SIM sudah terdaftar');
+    }
+
+    const existingVehicle = await this.prisma.vehicle.findUnique({
+      where: { plateNumber: dto.plateNumber },
+      select: { id: true },
+    });
+    if (existingVehicle) {
+      throw new ConflictException('Plat nomor sudah terdaftar');
+    }
+
+    const saved: string[] = [];
+    try {
+      const ktpKey = await this.storage.save(ktp, 'partners/ktp');
+      saved.push(ktpKey);
+      const simKey = await this.storage.save(sim, 'partners/sim');
+      saved.push(simKey);
+      const stnkKey = await this.storage.save(stnk, 'vehicles/stnk');
+      saved.push(stnkKey);
+      let photoKey: string | null = null;
+      if (photo) {
+        photoKey = await this.storage.save(photo, 'vehicles/photo');
+        saved.push(photoKey);
+      }
+
+      const passwordHash = await bcrypt.hash(dto.password, 12);
+
+      const user = await this.prisma.user.create({
+        data: {
+          name: dto.name,
+          email: dto.email,
+          phone: dto.phone,
+          passwordHash,
+          role: UserRole.PARTNER,
+          isVerified: true,
+          partner: {
+            create: {
+              ktpNumber: dto.ktpNumber,
+              ktpPhotoUrl: ktpKey,
+              simNumber: dto.simNumber,
+              simPhotoUrl: simKey,
+              status: PartnerStatus.APPROVED,
+              approvedBy: adminUserId,
+              approvedAt: new Date(),
+              vehicles: {
+                create: {
+                  type: dto.vehicleType,
+                  plateNumber: dto.plateNumber,
+                  brand: dto.brand,
+                  model: dto.model,
+                  maxWeightKg: dto.maxWeightKg,
+                  maxVolumeM3: dto.maxVolumeM3,
+                  stnkPhotoUrl: stnkKey,
+                  photoUrl: photoKey,
+                },
+              },
+            },
+          },
+        },
+        include: { partner: { include: { vehicles: true } } },
+      });
+
+      return {
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          phone: user.phone,
+          role: user.role,
+        },
+        partner: user.partner
+          ? {
+              id: user.partner.id,
+              status: user.partner.status,
+              ktpNumber: user.partner.ktpNumber,
+              simNumber: user.partner.simNumber,
+            }
+          : null,
+        vehicles:
+          user.partner?.vehicles.map((v) => ({
+            id: v.id,
+            type: v.type,
+            plateNumber: v.plateNumber,
+            brand: v.brand,
+            model: v.model,
+          })) ?? [],
+      };
+    } catch (err) {
+      await Promise.all(saved.map((key) => this.storage.remove(key)));
+      if ((err as { code?: string }).code === 'P2002') {
+        throw new ConflictException('Data partner sudah terdaftar');
+      }
+      throw err;
+    }
+  }
 
   async list(query: ListPartnersQuery) {
     const page = query.page ?? 1;

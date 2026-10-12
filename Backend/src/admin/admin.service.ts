@@ -2,8 +2,9 @@ import { ConflictException, Injectable, NotFoundException } from '@nestjs/common
 import { PrismaService } from '../prisma/prisma.service.js';
 import { MidtransClientService } from '../payments/midtrans.client.js';
 import { XenditClientService } from '../payments/xendit.client.js';
-import { OrderStatus, PartnerStatus, PaymentStatus } from '../generated/prisma/enums.js';
+import { OrderStatus, PartnerStatus, PaymentStatus, UserRole } from '../generated/prisma/enums.js';
 import { ListDisputesQuery } from './dto/list-disputes.query.js';
+import { ListCustomersQuery } from './dto/list-customers.query.js';
 import { ResolveDisputeDto } from './dto/resolve-dispute.dto.js';
 import { BalanceQueryDto } from './dto/balance-query.dto.js';
 import { ListXenditTransactionsQuery } from './dto/list-xendit-transactions.query.js';
@@ -95,6 +96,54 @@ export class AdminService {
       },
       disputes: { open: openDisputes },
     };
+  }
+
+  async listCustomers(query: ListCustomersQuery) {
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 20;
+    const search = query.search?.trim();
+
+    const where = {
+      role: UserRole.CUSTOMER,
+      ...(search
+        ? {
+            OR: [
+              { name: { contains: search, mode: 'insensitive' as const } },
+              { email: { contains: search, mode: 'insensitive' as const } },
+              { phone: { contains: search, mode: 'insensitive' as const } },
+            ],
+          }
+        : {}),
+    };
+
+    const [data, total] = await this.prisma.$transaction([
+      this.prisma.user.findMany({
+        where,
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          phone: true,
+          isActive: true,
+          isVerified: true,
+          createdAt: true,
+          _count: { select: { addresses: true } },
+          customerProfile: {
+            select: {
+              id: true,
+              avatarUrl: true,
+              _count: { select: { orders: true } },
+            },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      this.prisma.user.count({ where }),
+    ]);
+
+    return { data, meta: { page, limit, total } };
   }
 
   async listDisputes(query: ListDisputesQuery) {

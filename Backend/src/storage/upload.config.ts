@@ -2,3 +2,8 @@
 export const imageUploadOptions = {
   limits: { fileSize: 5 * 1024 * 1024, files: 2 },
 };
+
+// Pembuatan partner oleh admin mengunggah KTP, SIM, STNK, dan foto kendaraan.
+export const partnerCreateUploadOptions = {
+  limits: { fileSize: 5 * 1024 * 1024, files: 4 },
+};
