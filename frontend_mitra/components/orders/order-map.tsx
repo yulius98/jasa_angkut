@@ -6,6 +6,7 @@ import {
   Map,
   Marker,
   Polyline,
+  useApiIsLoaded,
   type MapProps,
 } from "@vis.gl/react-google-maps"
 import { MapPinned } from "lucide-react"
@@ -53,6 +54,58 @@ function toLatLng(point: TrackingPoint): { lat: number; lng: number } {
     lat: toNumber(point.latitude),
     lng: toNumber(point.longitude),
   }
+}
+
+interface OrderMarkersProps {
+  pickup: MapPoint
+  dropoff: MapPoint
+  latestPosition: { lat: number; lng: number } | null
+  path: { lat: number; lng: number }[]
+}
+
+// dotIcon() menyentuh objek global `google`, yang baru ada setelah Maps JS API
+// dimuat. Komponen ini sengaja dipisah dan hanya dirender di dalam <Map> (yang
+// baru menampilkan children setelah peta siap) agar tidak error "google is not
+// defined" pada render pertama.
+function OrderMarkers({
+  pickup,
+  dropoff,
+  latestPosition,
+  path,
+}: OrderMarkersProps) {
+  const apiLoaded = useApiIsLoaded()
+  if (!apiLoaded) return null
+
+  return (
+    <>
+      <Marker
+        position={pickup.position}
+        title={`Pickup: ${pickup.address}`}
+        icon={dotIcon(PICKUP_COLOR, 8)}
+      />
+      <Marker
+        position={dropoff.position}
+        title={`Dropoff: ${dropoff.address}`}
+        icon={dotIcon(DROPOFF_COLOR, 8)}
+      />
+      {latestPosition ? (
+        <Marker
+          position={latestPosition}
+          title="Posisi terakhir mitra"
+          icon={dotIcon(PARTNER_COLOR, 9)}
+          zIndex={50}
+        />
+      ) : null}
+      {path.length > 1 ? (
+        <Polyline
+          path={path}
+          strokeColor={ROUTE_COLOR}
+          strokeOpacity={0.9}
+          strokeWeight={4}
+        />
+      ) : null}
+    </>
+  )
 }
 
 export function OrderMap({
@@ -187,32 +240,12 @@ export function OrderMap({
               defaultCenter={pickup.position}
               defaultZoom={13}
             >
-              <Marker
-                position={pickup.position}
-                title={`Pickup: ${pickup.address}`}
-                icon={dotIcon(PICKUP_COLOR, 8)}
+              <OrderMarkers
+                pickup={pickup}
+                dropoff={dropoff}
+                latestPosition={latestPosition}
+                path={path}
               />
-              <Marker
-                position={dropoff.position}
-                title={`Dropoff: ${dropoff.address}`}
-                icon={dotIcon(DROPOFF_COLOR, 8)}
-              />
-              {latestPosition ? (
-                <Marker
-                  position={latestPosition}
-                  title="Posisi terakhir mitra"
-                  icon={dotIcon(PARTNER_COLOR, 9)}
-                  zIndex={50}
-                />
-              ) : null}
-              {path.length > 1 ? (
-                <Polyline
-                  path={path}
-                  strokeColor={ROUTE_COLOR}
-                  strokeOpacity={0.9}
-                  strokeWeight={4}
-                />
-              ) : null}
             </Map>
           </APIProvider>
 

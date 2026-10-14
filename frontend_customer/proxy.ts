@@ -16,10 +16,35 @@ function isProtected(pathname: string): boolean {
   )
 }
 
+/**
+ * Role dari cookie `user`. `undefined` berarti cookie tidak ada / korup — saat
+ * itu role tidak bisa dipastikan dan request dibiarkan lewat (validasi penuh
+ * tetap dilakukan di Server Component / API).
+ */
+function readRole(request: NextRequest): string | undefined {
+  const rawUser = request.cookies.get(USER_COOKIE)?.value
+  if (!rawUser) return undefined
+  try {
+    const user = JSON.parse(rawUser) as { role?: string }
+    return typeof user?.role === "string" ? user.role : undefined
+  } catch {
+    return undefined
+  }
+}
+
+/**
+ * Ada cookie sesi tapi bukan milik pelanggan (mis. sisa login aplikasi
+ * mitra/admin yang berbagi cookie pada host yang sama).
+ */
+function isForeignSession(role: string | undefined): boolean {
+  return role !== undefined && !isCustomerRole(role)
+}
+
 export function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl
   const accessToken = request.cookies.get(ACCESS_TOKEN_COOKIE)?.value
   const refreshToken = request.cookies.get(REFRESH_TOKEN_COOKIE)?.value
+  const role = readRole(request)
 
   // Sediakan URL asli untuk flow refresh token di Server Component.
   const requestHeaders = new Headers(request.headers)
@@ -31,6 +56,13 @@ export function proxy(request: NextRequest) {
     // Tujuan setelah login/register (mis. kembali ke /orders/new yang tadi
     // diminta sebelum sempat login).
     const next = safeNextPath(request.nextUrl.searchParams.get("next"))
+    // Sesi non-pelanggan JANGAN dilempar keluar dari halaman login. Jika tidak,
+    // /login -> halaman terproteksi -> /login -> ... saling redirect tanpa
+    // henti (ERR_TOO_MANY_REDIRECTS). Cukup tampilkan halaman login supaya user
+    // bisa masuk dengan akun pelanggan.
+    if (isForeignSession(role)) {
+      return response
+    }
     if (accessToken) {
       return NextResponse.redirect(new URL(next, request.url))
     }
@@ -56,16 +88,8 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL(`/login?next=${next}`, request.url))
   }
 
-  const rawUser = request.cookies.get(USER_COOKIE)?.value
-  if (rawUser) {
-    try {
-      const user = JSON.parse(rawUser) as { role?: string }
-      if (!isCustomerRole(user?.role)) {
-        return NextResponse.redirect(new URL("/login", request.url))
-      }
-    } catch {
-      // cookie korup: biarkan berlalu, validasi penuh dilakukan di RSC
-    }
+  if (isForeignSession(role)) {
+    return NextResponse.redirect(new URL("/login", request.url))
   }
 
   return response

@@ -6,11 +6,13 @@ import {
   Map,
   Marker,
   Polyline,
+  useApiIsLoaded,
   type MapProps,
 } from "@vis.gl/react-google-maps"
 import { MapPinned } from "lucide-react"
 
 import { cn } from "cn"
+import { useMapsAuthFailure } from "@/components/map/use-maps-auth-failure"
 import { dayjs, toNumber } from "@/lib/format"
 import { isActiveStatus } from "@/lib/orders"
 import type { OrderStatus, TrackingPoint, TrackingSnapshot } from "@/types"
@@ -55,6 +57,58 @@ function toLatLng(point: TrackingPoint): { lat: number; lng: number } {
   }
 }
 
+interface OrderMarkersProps {
+  pickup: MapPoint
+  dropoff: MapPoint
+  latestPosition: { lat: number; lng: number } | null
+  path: { lat: number; lng: number }[]
+}
+
+// dotIcon() menyentuh objek global `google`, yang baru ada setelah Maps JS API
+// dimuat. Komponen ini sengaja dipisah dan hanya dirender di dalam <Map> (yang
+// baru menampilkan children setelah peta siap) agar tidak error "google is not
+// defined" pada render pertama.
+function OrderMarkers({
+  pickup,
+  dropoff,
+  latestPosition,
+  path,
+}: OrderMarkersProps) {
+  const apiLoaded = useApiIsLoaded()
+  if (!apiLoaded) return null
+
+  return (
+    <>
+      <Marker
+        position={pickup.position}
+        title={`Pickup: ${pickup.address}`}
+        icon={dotIcon(PICKUP_COLOR, 8)}
+      />
+      <Marker
+        position={dropoff.position}
+        title={`Dropoff: ${dropoff.address}`}
+        icon={dotIcon(DROPOFF_COLOR, 8)}
+      />
+      {latestPosition ? (
+        <Marker
+          position={latestPosition}
+          title="Posisi terakhir mitra"
+          icon={dotIcon(PARTNER_COLOR, 9)}
+          zIndex={50}
+        />
+      ) : null}
+      {path.length > 1 ? (
+        <Polyline
+          path={path}
+          strokeColor={ROUTE_COLOR}
+          strokeOpacity={0.9}
+          strokeWeight={4}
+        />
+      ) : null}
+    </>
+  )
+}
+
 export function OrderMap({
   apiKey,
   orderId,
@@ -70,6 +124,9 @@ export function OrderMap({
     initialLatest?.recordedAt ?? null
   )
   const [pollError, setPollError] = useState<string | null>(null)
+
+  const mapsAuthFailed = useMapsAuthFailure()
+  const mapAvailable = Boolean(apiKey) && !mapsAuthFailed
 
   const isActive = isActiveStatus(status)
 
@@ -160,14 +217,19 @@ export function OrderMap({
         <p className="text-xs text-destructive">{pollError}</p>
       ) : null}
 
-      {!apiKey ? (
+      {!mapAvailable ? (
         <div className="grid h-72 place-items-center rounded-lg border border-dashed bg-muted/30 p-6 text-center">
           <div className="grid max-w-sm gap-1.5">
             <MapPinned className="mx-auto size-8 text-muted-foreground" />
             <p className="text-sm font-medium">
-              Peta Google Maps belum dikonfigurasi
+              {mapsAuthFailed
+                ? "Peta Google Maps tidak dapat dimuat"
+                : "Peta Google Maps belum dikonfigurasi"}
             </p>
             <p className="text-xs text-muted-foreground">
+              {mapsAuthFailed
+                ? "API key Google Maps ditolak oleh Google. Periksa pembatasan/enable API di Google Cloud Console. "
+                : null}
               Isi{" "}
               <code className="font-mono">
                 NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
@@ -187,32 +249,12 @@ export function OrderMap({
               defaultCenter={pickup.position}
               defaultZoom={13}
             >
-              <Marker
-                position={pickup.position}
-                title={`Pickup: ${pickup.address}`}
-                icon={dotIcon(PICKUP_COLOR, 8)}
+              <OrderMarkers
+                pickup={pickup}
+                dropoff={dropoff}
+                latestPosition={latestPosition}
+                path={path}
               />
-              <Marker
-                position={dropoff.position}
-                title={`Dropoff: ${dropoff.address}`}
-                icon={dotIcon(DROPOFF_COLOR, 8)}
-              />
-              {latestPosition ? (
-                <Marker
-                  position={latestPosition}
-                  title="Posisi terakhir mitra"
-                  icon={dotIcon(PARTNER_COLOR, 9)}
-                  zIndex={50}
-                />
-              ) : null}
-              {path.length > 1 ? (
-                <Polyline
-                  path={path}
-                  strokeColor={ROUTE_COLOR}
-                  strokeOpacity={0.9}
-                  strokeWeight={4}
-                />
-              ) : null}
             </Map>
           </APIProvider>
 

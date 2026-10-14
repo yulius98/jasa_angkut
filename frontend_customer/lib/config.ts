@@ -11,5 +11,11 @@ export const SESSION_MAX_AGE = 60 * 60 * 24 * 7
 
 export const APP_NAME = "Jasa Antar"
 
+/**
+ * API key Google Maps (Maps JavaScript API + Geocoding API) untuk app
+ * pelanggan. Dibaca dari `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` di `.env.local`.
+ * Jangan di-hardcode di sini. Bila kosong, peta otomatis berganti ke input
+ * koordinat manual (lihat `LocationPicker` / `OrderMap`).
+ */
 export const GOOGLE_MAPS_API_KEY =
   process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? ""

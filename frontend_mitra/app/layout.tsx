@@ -4,6 +4,7 @@ import { Geist, Geist_Mono } from "next/font/google"
 import { ThemeProvider } from "@/components/theme-provider"
 import { Toaster } from "@/components/ui/sonner"
 import { TooltipProvider } from "@/components/ui/tooltip"
+import { BeforeHydrationCleanup } from "@/components/before-hydration-cleanup"
 
 import "./globals.css"
 
@@ -48,6 +49,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} min-h-dvh antialiased`}
       >
+        <BeforeHydrationCleanup />
         <ThemeProvider>
           <TooltipProvider delay={100}>
             {children}

@@ -11,6 +11,7 @@ import { Crosshair, Loader2 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { useMapsAuthFailure } from "@/components/map/use-maps-auth-failure"
 
 // Pusat peta default: Jakarta. Hanya dipakai sebelum pengguna memilih titik.
 const DEFAULT_CENTER = { lat: -6.2, lng: 106.816666 }
@@ -51,6 +52,8 @@ export function LocationPicker({
 }: LocationPickerProps) {
   const [locating, setLocating] = useState(false)
   const [geocodeError, setGeocodeError] = useState<string | null>(null)
+  const mapsAuthFailed = useMapsAuthFailure()
+  const mapAvailable = Boolean(apiKey) && !mapsAuthFailed
 
   const reverseGeocode = useCallback(
     (position: LatLng) => {
@@ -128,7 +131,7 @@ export function LocationPicker({
 
   return (
     <div className="grid gap-2">
-      {apiKey ? (
+      {mapAvailable ? (
         <div className="relative overflow-hidden rounded-xl border">
           <APIProvider apiKey={apiKey}>
             <Map
@@ -154,8 +157,9 @@ export function LocationPicker({
       ) : (
         <div className="grid gap-2 rounded-xl border border-dashed bg-muted/30 p-4">
           <p className="text-xs text-muted-foreground">
-            Peta belum dikonfigurasi. Atur koordinat manual atau gunakan lokasi
-            saat ini.
+            {mapsAuthFailed
+              ? "Peta Google Maps tidak dapat dimuat karena API key ditolak. Atur koordinat manual atau gunakan lokasi saat ini."
+              : "Peta belum dikonfigurasi. Atur koordinat manual atau gunakan lokasi saat ini."}
           </p>
           <div className="grid grid-cols-2 gap-2">
             <Input
@@ -205,7 +209,7 @@ export function LocationPicker({
       {geocodeError ? (
         <p className="text-xs text-destructive">{geocodeError}</p>
       ) : null}
-      {apiKey && onAddressChange ? (
+      {mapAvailable && onAddressChange ? (
         <p className="text-xs text-muted-foreground">
           Ketuk peta untuk memilih titik; alamat akan terisi otomatis.
         </p>
