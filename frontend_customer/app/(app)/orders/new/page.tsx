@@ -1,9 +1,11 @@
 import { AppHeader } from "@/components/app/app-header"
 import { DesktopPageHeader } from "@/components/app/desktop-page-header"
 import { CreateOrderForm } from "@/components/orders/create-order-form"
-import { GOOGLE_MAPS_API_KEY } from "@/lib/config"
+import { getGoogleMapsApiKey } from "@/lib/server-config"
 
-export default function NewOrderPage() {
+export default async function NewOrderPage() {
+  const googleMapsApiKey = await getGoogleMapsApiKey()
+
   return (
     <div>
       {/* Handphone (< lg): header mobile seperti sebelumnya. */}
@@ -21,7 +23,7 @@ export default function NewOrderPage() {
         maxWidthClassName="max-w-3xl"
       />
 
-      <CreateOrderForm apiKey={GOOGLE_MAPS_API_KEY} />
+      <CreateOrderForm apiKey={googleMapsApiKey} />
     </div>
   )
 }

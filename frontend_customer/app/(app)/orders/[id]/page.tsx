@@ -16,7 +16,7 @@ import { StatusBadge } from "@/components/shared/status-badge"
 import { ErrorState } from "@/components/shared/error-state"
 import { Card } from "@/components/ui/card"
 import { ApiError, serverFetch } from "@/lib/api"
-import { GOOGLE_MAPS_API_KEY } from "@/lib/config"
+import { getGoogleMapsApiKey } from "@/lib/server-config"
 import { requireSession } from "@/lib/session"
 import {
   ORDER_STATUS_META,
@@ -65,13 +65,14 @@ export default async function OrderDetailPage({
     )
   }
 
-  const [payment, rating, latest, history] = await Promise.all([
+  const [payment, rating, latest, history, googleMapsApiKey] = await Promise.all([
     safeGet<Payment>(`/payments/order/${order.id}`),
     safeGet<Rating>(`/ratings/order/${order.id}`),
     safeGet<TrackingPoint>(`/tracking/orders/${order.id}/latest`),
     safeGet<TrackingPoint[]>(
       `/tracking/orders/${order.id}/history?limit=500`
     ),
+    getGoogleMapsApiKey(),
   ])
 
   const pickup = {
@@ -91,7 +92,7 @@ export default async function OrderDetailPage({
 
   const map = (
     <OrderMap
-      apiKey={GOOGLE_MAPS_API_KEY}
+      apiKey={googleMapsApiKey}
       orderId={order.id}
       status={order.status}
       pickup={pickup}

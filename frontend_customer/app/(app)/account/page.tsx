@@ -3,6 +3,8 @@ import {
   ChevronRight,
   ClipboardList,
   Headphones,
+  Mail,
+  MessageCircle,
   ShieldCheck,
 } from "lucide-react"
 
@@ -12,11 +14,15 @@ import { LogoutButton } from "@/components/account/logout-button"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Card } from "@/components/ui/card"
+import { getPublicConfig, type PublicConfig } from "@/lib/server-config"
 import { requireSession } from "@/lib/session"
 import { USER_ROLE_META } from "@/lib/format"
 
 export default async function AccountPage() {
-  const session = await requireSession()
+  const [session, config] = await Promise.all([
+    requireSession(),
+    getPublicConfig(),
+  ])
   const user = session.user
   const initials = user?.name
     ? user.name
@@ -43,6 +49,8 @@ export default async function AccountPage() {
           />
 
           <SettingsCard />
+
+          <SupportCard config={config} />
 
           <SecurityNote />
 
@@ -71,6 +79,7 @@ export default async function AccountPage() {
             </div>
             <div className="grid gap-6 lg:col-span-2">
               <SettingsCard />
+              <SupportCard config={config} />
               <SecurityNote />
               <LogoutButton />
             </div>
@@ -128,6 +137,52 @@ function SecurityNote() {
         dikonfirmasi langsung oleh mitra, sedangkan pembayaran online diproses
         melalui gateway pembayaran resmi.
       </p>
+    </Card>
+  )
+}
+
+function SupportCard({ config }: { config: PublicConfig }) {
+  const whatsappDigits = config.supportWhatsapp.replace(/\D/g, "")
+  if (!whatsappDigits && !config.supportEmail) return null
+
+  return (
+    <Card className="divide-y divide-border">
+      {whatsappDigits ? (
+        <a
+          href={`https://wa.me/${whatsappDigits}`}
+          target="_blank"
+          rel="noreferrer"
+          className="flex items-center gap-3 p-4 transition-colors active:bg-muted/50 lg:hover:bg-muted/50"
+        >
+          <span className="grid size-9 place-items-center rounded-full bg-primary/10 text-primary">
+            <MessageCircle className="size-5" />
+          </span>
+          <span className="flex-1 grid">
+            <span className="text-sm font-medium">WhatsApp dukungan</span>
+            <span className="text-xs text-muted-foreground">
+              {config.supportWhatsapp}
+            </span>
+          </span>
+          <ChevronRight className="size-4 text-muted-foreground" />
+        </a>
+      ) : null}
+      {config.supportEmail ? (
+        <a
+          href={`mailto:${config.supportEmail}`}
+          className="flex items-center gap-3 p-4 transition-colors active:bg-muted/50 lg:hover:bg-muted/50"
+        >
+          <span className="grid size-9 place-items-center rounded-full bg-primary/10 text-primary">
+            <Mail className="size-5" />
+          </span>
+          <span className="flex-1 grid">
+            <span className="text-sm font-medium">Email dukungan</span>
+            <span className="text-xs text-muted-foreground">
+              {config.supportEmail}
+            </span>
+          </span>
+          <ChevronRight className="size-4 text-muted-foreground" />
+        </a>
+      ) : null}
     </Card>
   )
 }

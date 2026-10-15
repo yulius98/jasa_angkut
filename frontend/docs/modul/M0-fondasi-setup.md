@@ -39,8 +39,9 @@ API, komponen dasar, dan prasyarat backend.
 - `frontend/.env.local`:
   ```
   BACKEND_URL=http://localhost:3001
-  NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=      # diisi di M4
   ```
+- API key Google Maps tidak lagi per-frontend; terpusat di `Backend/.env`
+  (`GOOGLE_MAPS_API_KEY`) dan diambil via `lib/server-config.ts`.
 
 ### 5. Struktur & helper
 - `types/` — salinan tipe model & enum dari `schema.prisma` + `enums.ts`.

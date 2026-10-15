@@ -7,6 +7,7 @@ import {
   ClipboardList,
   LayoutDashboard,
   Scale,
+  Settings,
   ShieldCheck,
   Tag,
   TicketPercent,
@@ -57,6 +58,7 @@ const configurationItems: NavItem[] = [
   { title: "Zona Harga", url: "/pricing/zones", icon: Tag },
   { title: "Kode Promo", url: "/pricing/promos", icon: TicketPercent },
   { title: "Kelola Admin", url: "/admins", icon: ShieldCheck },
+  { title: "Konfigurasi", url: "/config", icon: Settings },
 ]
 
 function NavGroup({ label, items }: { label: string; items: NavItem[] }) {
@@ -98,9 +100,10 @@ function NavGroup({ label, items }: { label: string; items: NavItem[] }) {
   )
 }
 
-export function AppSidebar(
-  props: React.ComponentProps<typeof Sidebar>
-) {
+export function AppSidebar({
+  appName = "Jasa Antar",
+  ...props
+}: React.ComponentProps<typeof Sidebar> & { appName?: string }) {
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
@@ -116,7 +119,7 @@ export function AppSidebar(
               </div>
               <div className="grid flex-1 text-start leading-tight">
                 <span className="truncate font-heading font-semibold">
-                  Jasa Antar
+                  {appName}
                 </span>
                 <span className="truncate text-xs text-sidebar-foreground/60">
                   Admin Dashboard

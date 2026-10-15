@@ -51,7 +51,10 @@ LOADING|IN_TRANSIT|ARRIVED_AT_DROPOFF|UNLOADING|COMPLETED|CANCELLED|DISPUTED`.
   `PriceSummary`, `PageHeader`.
 
 ## Konfigurasi
-- `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` di `.env.local`.
+- `GOOGLE_MAPS_API_KEY` di `Backend/.env` (satu sumber untuk semua frontend),
+  disajikan lewat `GET /config/public` dan diambil via `lib/server-config.ts`.
+  Lihat [M12 — Konfigurasi & Public Config](./M12-konfigurasi.md) untuk detail
+  endpoint, env, dan halaman pengelolaannya.
 - Library `@vis.gl/react-google-maps`.
 - Route proxy tidak diperlukan (koordinat datang sebagai JSON via server fetch),
   kecuali butuh polling dari client → sediakan `app/api/proxy/tracking/[orderId]/route.ts`
@@ -83,7 +86,7 @@ LOADING|IN_TRANSIT|ARRIVED_AT_DROPOFF|UNLOADING|COMPLETED|CANCELLED|DISPUTED`.
   (hijau), dropoff (merah), posisi mitra (biru) berupa simbol lingkaran; polyline
   biru dari `history`. `defaultBounds` dihitung dari kedua titik (dengan padding
   agar tidak nol). Bila API key kosong → placeholder yang menjelaskan cara
-  mengisi `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`; bila belum ada titik → peta tetap
+  mengisi `GOOGLE_MAPS_API_KEY` di `Backend/.env`; bila belum ada titik → peta tetap
   render dengan overlay "Belum ada titik lokasi mitra".
 - **Timeline**: `OrderTimeline` mengurutkan `statusHistory` ascending (jaring
   pengaman) lalu menampilkan `StatusBadge` + catatan + waktu.

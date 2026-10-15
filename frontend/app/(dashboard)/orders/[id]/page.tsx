@@ -15,6 +15,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { ApiError, serverFetch } from "@/lib/api"
+import { getGoogleMapsApiKey } from "@/lib/server-config"
 import {
   formatDateTime,
   formatDistance,
@@ -71,10 +72,11 @@ export default async function OrderDetailPage({
     )
   }
 
-  const [payment, latest, history] = await Promise.all([
+  const [payment, latest, history, googleMapsApiKey] = await Promise.all([
     fetchOptional<Payment>(`/payments/order/${id}`),
     fetchOptional<TrackingPoint>(`/tracking/orders/${id}/latest`),
     fetchOptional<TrackingPoint[]>(`/tracking/orders/${id}/history?limit=500`),
+    getGoogleMapsApiKey(),
   ])
 
   const trackingHistory = history ?? []
@@ -306,7 +308,7 @@ export default async function OrderDetailPage({
             </CardHeader>
             <CardContent>
               <OrderMap
-                apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? ""}
+                apiKey={googleMapsApiKey}
                 orderId={order.id}
                 status={order.status}
                 pickup={pickupPoint}

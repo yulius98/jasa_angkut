@@ -15,6 +15,7 @@ import { PaymentsModule } from './payments/payments.module.js';
 import { AdminModule } from './admin/admin.module.js';
 import { WithdrawalsModule } from './withdrawals/withdrawals.module.js';
 import { ChatModule } from './chat/chat.module.js';
+import { PublicConfigModule } from './public-config/public-config.module.js';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { ChatModule } from './chat/chat.module.js';
     AdminModule,
     WithdrawalsModule,
     ChatModule,
+    PublicConfigModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -132,6 +132,7 @@ frontend/
 | M8 | Pencairan (Withdrawal) | `/withdrawals` | `GET/POST /admin/withdrawals`, `refresh-status` | ✅ Selesai |
 | M9 | Pelanggan | `/customers` | `GET /admin/customers` | ✅ Selesai |
 | M10 | Kelola Admin | `/admins` | `GET/POST/PATCH/DELETE /admin/admins` | ✅ Selesai |
+| M12 | Konfigurasi & Public Config | `/config` | `GET /config/public`, `/config/health`, `POST /config/public/revalidate` | ✅ Selesai |
 
 Keterangan status: ⬜ Belum · 🟡 Sedang dikerjakan · ✅ Selesai
 
@@ -208,6 +209,13 @@ memerlukan header `Authorization: Bearer <accessToken>`.
 | Method | Path | Role |
 |---|---|---|
 | GET | `/vehicles/:id/files/:kind` (`stnk`\|`photo`) | pemilik / admin |
+
+### Config
+| Method | Path | Role |
+|---|---|---|
+| GET | `/config/public` | publik |
+| POST | `/config/public/revalidate` | ADMIN, SUPER_ADMIN |
+| GET | `/config/health` | publik |
 
 ---
 

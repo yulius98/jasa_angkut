@@ -1,4 +1,5 @@
 import { AdminShell } from "@/components/admin/admin-shell"
+import { getPublicConfig } from "@/lib/server-config"
 import { requireSession } from "@/lib/session"
 
 export default async function DashboardLayout({
@@ -6,7 +7,14 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode
 }) {
-  const session = await requireSession()
+  const [session, config] = await Promise.all([
+    requireSession(),
+    getPublicConfig(),
+  ])
 
-  return <AdminShell user={session.user}>{children}</AdminShell>
+  return (
+    <AdminShell user={session.user} appName={config.appName}>
+      {children}
+    </AdminShell>
+  )
 }

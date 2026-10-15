@@ -230,13 +230,9 @@ export function OrderMap({
               {mapsAuthFailed
                 ? "API key Google Maps ditolak oleh Google. Periksa pembatasan/enable API di Google Cloud Console. "
                 : null}
-              Isi{" "}
-              <code className="font-mono">
-                NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
-              </code>{" "}
-              di{" "}
-              <code className="font-mono">frontend_customer/.env.local</code>{" "}
-              untuk menampilkan peta perjalanan.
+              Isi <code className="font-mono">GOOGLE_MAPS_API_KEY</code> di{" "}
+              <code className="font-mono">Backend/.env</code> untuk menampilkan
+              peta perjalanan.
             </p>
           </div>
         </div>
