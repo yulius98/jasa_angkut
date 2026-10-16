@@ -68,13 +68,34 @@ export const PAYMENT_PROVIDER_META: Record<
   MIDTRANS: {
     label: "Midtrans",
     description:
-      "Pembayaran via Snap Midtrans: VA, e-wallet, kartu kredit, dan retail.",
+      "Pembayaran via Snap Midtrans (embedded): VA, e-wallet, kartu kredit, dan retail.",
   },
   XENDIT: {
     label: "Xendit",
     description:
-      "Pembayaran via Invoice Xendit: VA, e-wallet, kartu kredit, dan QRIS.",
+      "Pembayaran via Xendit Components (embedded): VA, QRIS, e-wallet, dan kartu kredit.",
   },
+}
+
+export const PaymentGatewayMode = {
+  MIDTRANS: "MIDTRANS",
+  XENDIT: "XENDIT",
+  MIDTRANS_CASH: "MIDTRANS_CASH",
+  XENDIT_CASH: "XENDIT_CASH",
+  CASH: "CASH",
+} as const
+export type PaymentGatewayMode =
+  (typeof PaymentGatewayMode)[keyof typeof PaymentGatewayMode]
+
+export interface PaymentMethodSettings {
+  mode: PaymentGatewayMode
+  gateway: PaymentProvider | null
+  cashEnabled: boolean
+  // Kunci publik Midtrans + env, dipakai app pelanggan untuk memuat Snap.js
+  // (mode embedded). Bukan rahasia: client key memang dipakai di browser.
+  midtransClientKey?: string
+  midtransIsProduction?: boolean
+  midtransSnapJsUrl?: string
 }
 
 export const PromoType = {
@@ -478,8 +499,14 @@ export interface EstimatePrice {
 
 /** Respons `POST /payments` — bisa membawa instruksi pembayaran dari gateway. */
 export type PaymentCreateResult = Payment & {
+  /** Midtrans: token Snap untuk `snap.embed()` di app pelanggan. */
   snapToken?: string
   redirectUrl?: string
+  /** Xendit Components: kunci sesi berumur pendek untuk SDK di browser. */
+  componentsSdkKey?: string
+  paymentSessionId?: string
+  /** Waktu kedaluwarsa sesi (ISO 8601), untuk Xendit Components. */
+  expiresAt?: string | null
   invoiceUrl?: string
 }
 

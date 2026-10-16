@@ -21,19 +21,19 @@ export class PaymentsController {
     return this.payments.create(user.userId, dto);
   }
 
-  // Setting gateway pembayaran global (MIDTRANS | XENDIT) yang dipilih admin.
-  // Dipakai sebagai default semua pembayaran non-tunai baru.
+  // Setting metode pembayaran global (mode) yang dipilih admin. Dipakai UI
+  // Konfigurasi admin dan sebagai penentu metode apa yang boleh dipakai order.
   @Get('settings')
   @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
-  async getSettings() {
-    return { paymentGateway: await this.payments.getPaymentGatewaySetting() };
+  getSettings() {
+    return this.payments.getPaymentMethodSettings();
   }
 
   @Patch('settings')
   @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
   async updateSettings(@Body() dto: UpdateGatewaySettingDto) {
-    const paymentGateway = await this.payments.updatePaymentGatewaySetting(dto.paymentGateway);
-    return { paymentGateway };
+    await this.payments.updatePaymentGatewayMode(dto.paymentGatewayMode);
+    return this.payments.getPaymentMethodSettings();
   }
 
   @Patch(':id/mark-paid')

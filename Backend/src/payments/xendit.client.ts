@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Xendit } from 'xendit-node';
 
@@ -14,6 +14,34 @@ export interface InvoiceResult {
   invoiceUrl: string;
 }
 
+// Xendit memakai host API yang sama untuk test & production -- mode ditentukan
+// oleh secret key yang dipakai (xnd_development_... vs xnd_production_...).
+const XENDIT_API_BASE = 'https://api.xendit.co';
+
+export interface CreateComponentsSessionParams {
+  /** reference_id sesi; kita isi dengan orderNumber agar webhook mudah dipetakan. */
+  referenceId: string;
+  amount: number;
+  /** reference_id customer (wajib alfanumerik, unik). */
+  customerRefId: string;
+  customerName: string;
+  customerEmail: string | null;
+  customerPhone: string | null;
+  /** Origin app pelanggan, dipakai Xendit Components untuk validasi CORS. */
+  origins: string[];
+  /** URL kembali setelah pembayaran (wajib HTTPS bila diisi). */
+  returnUrl?: string;
+  /** Masa berlaku sesi. Bila kosong, Xendit memakai default 30 menit. */
+  expiresAt?: Date;
+}
+
+export interface ComponentsSessionResult {
+  paymentSessionId: string;
+  componentsSdkKey: string;
+  expiresAt: string | null;
+  status: string;
+}
+
 /**
  * Pembungkus tipis di atas SDK resmi xendit-node (v7), method Invoice API.
  * Nama field di bawah ini (externalId, amount, payerEmail, description,
@@ -26,9 +54,11 @@ export interface InvoiceResult {
 @Injectable()
 export class XenditClientService {
   private readonly client: Xendit;
+  private readonly secretKey: string;
 
   constructor(config: ConfigService) {
     const secretKey = config.getOrThrow<string>('XENDIT_SECRET_KEY');
+    this.secretKey = secretKey;
     this.client = new Xendit({ secretKey });
   }
 
@@ -43,6 +73,80 @@ export class XenditClientService {
       },
     });
     return { invoiceId: result.id ?? '', invoiceUrl: result.invoiceUrl };
+  }
+
+  /**
+   * Buat Payment Session mode COMPONENTS (Xendit Components) supaya pembayaran
+   * bisa di-embed langsung di app pelanggan tanpa redirect ke halaman Xendit.
+   *
+   * Dipanggil lewat HTTP mentah, BUKAN lewat SDK xendit-node@7, karena versi
+   * yang terpasang belum membungkus endpoint Sessions
+   * (POST https://api.xendit.co/sessions). Request/response dicocokkan dengan
+   * dokumentasi resmi:
+   * https://docs.xendit.co/docs/components-one-time-payment
+   *
+   * Yang dipakai app pelanggan dari balikan ini hanya `componentsSdkKey`
+   * (kunci sesi berumur pendek untuk inisialisasi SDK di browser); sisanya
+   * untuk logging/pemetaan webhook.
+   */
+  async createComponentsSession(
+    params: CreateComponentsSessionParams,
+  ): Promise<ComponentsSessionResult> {
+    const payload = {
+      reference_id: params.referenceId,
+      session_type: 'PAY',
+      mode: 'COMPONENTS',
+      amount: Math.round(params.amount),
+      currency: 'IDR',
+      country: 'ID',
+      customer: {
+        reference_id: params.customerRefId,
+        type: 'INDIVIDUAL',
+        ...(params.customerEmail ? { email: params.customerEmail } : {}),
+        ...(params.customerPhone ? { mobile_number: params.customerPhone } : {}),
+        individual_detail: { given_names: params.customerName },
+      },
+      description: `Pembayaran order ${params.referenceId}`,
+      ...(params.expiresAt ? { expires_at: params.expiresAt.toISOString() } : {}),
+      components_configuration: {
+        origins: params.origins,
+        ...(params.returnUrl ? { return_url: params.returnUrl } : {}),
+      },
+    };
+
+    const auth = Buffer.from(`${this.secretKey}:`).toString('base64');
+    const res = await fetch(`${XENDIT_API_BASE}/sessions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+        Authorization: `Basic ${auth}`,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!res.ok) {
+      const body = await res.text();
+      throw new BadRequestException(`Xendit session API error (${res.status}): ${body}`);
+    }
+
+    const json = (await res.json()) as {
+      payment_session_id?: string;
+      components_sdk_key?: string;
+      expires_at?: string;
+      status?: string;
+    };
+
+    if (!json.payment_session_id || !json.components_sdk_key) {
+      throw new BadRequestException('Xendit tidak mengembalikan components_sdk_key');
+    }
+
+    return {
+      paymentSessionId: json.payment_session_id,
+      componentsSdkKey: json.components_sdk_key,
+      expiresAt: json.expires_at ?? null,
+      status: json.status ?? 'ACTIVE',
+    };
   }
 
   /**

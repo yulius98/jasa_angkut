@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { Banknote, CheckCircle2, CreditCard, Info } from "lucide-react"
+import { Banknote, CheckCircle2, CreditCard, Info, RotateCcw } from "lucide-react"
 import { toast } from "sonner"
 
 import { StatusBadge } from "@/components/shared/status-badge"
@@ -17,13 +17,14 @@ import {
   formatRupiah,
 } from "@/lib/format"
 import { isUnpaid } from "@/lib/orders"
-import type { OrderStatus, Payment } from "@/types"
+import type { OrderStatus, Payment, PaymentMethodSettings } from "@/types"
 
 interface PaymentPanelProps {
   orderId: string
   amount: string
   status: OrderStatus
   payment: Payment | null
+  paymentSettings: PaymentMethodSettings
 }
 
 export function PaymentPanel({
@@ -31,37 +32,45 @@ export function PaymentPanel({
   amount,
   status,
   payment,
+  paymentSettings,
 }: PaymentPanelProps) {
   const router = useRouter()
-  const [action, setAction] = useState<"online" | "cash" | null>(null)
+  const [payingCash, setPayingCash] = useState(false)
+
+  const onlineEnabled = Boolean(paymentSettings.gateway)
+  const cashEnabled = paymentSettings.cashEnabled
 
   if (!isUnpaid(status)) {
     return null
   }
 
-  async function pay(method: "VIRTUAL_ACCOUNT" | "CASH") {
-    setAction(method === "VIRTUAL_ACCOUNT" ? "online" : "cash")
-    const result = await createPaymentAction(orderId, method)
+  // Checkout online sekarang terjadi DI DALAM app (embed Midtrans Snap atau
+  // Xendit Components), bukan redirect ke halaman gateway. Karena itu tombolnya
+  // cuma membuka halaman pembayaran kita sendiri.
+  function openCheckout() {
+    router.push(`/orders/${orderId}/payment`)
+  }
+
+  async function payCash() {
+    setPayingCash(true)
+    const result = await createPaymentAction(orderId, "CASH")
     if (!result.ok) {
-      setAction(null)
+      setPayingCash(false)
       toast.error(result.message)
       return
     }
 
-    const data = result.data
-    const gatewayUrl = data.redirectUrl ?? data.invoiceUrl
-    if (method === "VIRTUAL_ACCOUNT" && gatewayUrl) {
-      // Redirect ke halaman pembayaran gateway (Midtrans/Xendit).
-      window.location.href = gatewayUrl
-      return
-    }
-
-    setAction(null)
-    toast.success(
-      method === "CASH" ? "Pembayaran tunai dicatat" : "Pembayaran dibuat"
-    )
+    setPayingCash(false)
+    toast.success("Pembayaran tunai dicatat")
     router.refresh()
   }
+
+  // Tombol lanjut/ganti metode untuk pembayaran yang sudah ada tapi belum lunas.
+  const canResumeOnline =
+    onlineEnabled &&
+    payment !== null &&
+    (payment.status === "PENDING" || payment.status === "FAILED") &&
+    payment.method !== "CASH"
 
   return (
     <Card className="gap-3 p-4">
@@ -79,27 +88,44 @@ export function PaymentPanel({
 
       {payment ? <PaymentDetail payment={payment} /> : null}
 
+      {canResumeOnline ? (
+        <Button size="lg" className="h-11 w-full" onClick={openCheckout}>
+          {payment?.status === "FAILED" ? (
+            <RotateCcw className="size-4" />
+          ) : (
+            <CreditCard className="size-4" />
+          )}
+          {payment?.status === "FAILED"
+            ? "Coba metode lain"
+            : "Lanjutkan pembayaran"}
+        </Button>
+      ) : null}
+
       {!payment ? (
         <div className="grid gap-2 border-t pt-3">
-          <Button
-            size="lg"
-            className="h-11 w-full"
-            onClick={() => pay("VIRTUAL_ACCOUNT")}
-            disabled={action !== null}
-          >
-            {action === "online" ? <Spinner /> : <CreditCard className="size-4" />}
-            Bayar Online
-          </Button>
-          <Button
-            variant="outline"
-            size="lg"
-            className="h-11 w-full"
-            onClick={() => pay("CASH")}
-            disabled={action !== null}
-          >
-            {action === "cash" ? <Spinner /> : <Banknote className="size-4" />}
-            Bayar Tunai ke Mitra
-          </Button>
+          {onlineEnabled ? (
+            <Button size="lg" className="h-11 w-full" onClick={openCheckout}>
+              <CreditCard className="size-4" />
+              Bayar Online
+            </Button>
+          ) : null}
+          {cashEnabled ? (
+            <Button
+              variant="outline"
+              size="lg"
+              className="h-11 w-full"
+              onClick={payCash}
+              disabled={payingCash}
+            >
+              {payingCash ? <Spinner /> : <Banknote className="size-4" />}
+              Bayar Tunai ke Mitra
+            </Button>
+          ) : null}
+          {!onlineEnabled && !cashEnabled ? (
+            <p className="rounded-lg bg-muted p-3 text-sm text-muted-foreground">
+              Belum ada metode pembayaran yang tersedia. Hubungi dukungan.
+            </p>
+          ) : null}
         </div>
       ) : null}
     </Card>
@@ -124,8 +150,8 @@ function PaymentDetail({ payment }: { payment: Payment }) {
       <div className="flex items-start gap-2 rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
         <Info className="mt-0.5 size-4 shrink-0" />
         <span>
-          Pembayaran gagal. Hubungi dukungan untuk membantu menyelesaikan
-          pembayaran.
+          Pembayaran sebelumnya belum berhasil. Kamu bisa mencoba lagi atau
+          memilih metode pembayaran lain.
         </span>
       </div>
     )
@@ -156,8 +182,8 @@ function PaymentDetail({ payment }: { payment: Payment }) {
     <div className="flex items-start gap-2 rounded-lg bg-muted p-3 text-sm text-muted-foreground">
       <Info className="mt-0.5 size-4 shrink-0" />
       <span>
-        Pembayaran online {PAYMENT_METHOD_META[payment.method].label} masih
-        diproses. Selesaikan lewat halaman pembayaran yang sudah terbuka.
+        Pembayaran online {PAYMENT_METHOD_META[payment.method].label} belum
+        diselesaikan.
       </span>
     </div>
   )

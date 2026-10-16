@@ -103,11 +103,29 @@ agar halaman tetap render (peta jatuh ke tampilan "belum dikonfigurasi").
 ### Halaman Konfigurasi (admin)
 
 - Route: `/config` (`app/(dashboard)/config/page.tsx`, Server Component).
-- Menampilkan: identitas & dukungan, status Google Maps (key di-mask), dan status
-  backend (`/config/health`).
+- Menampilkan: identitas & dukungan, status Google Maps (key di-mask), **metode
+  pembayaran**, dan status backend (`/config/health`).
 - Tombol **Refresh konfigurasi** (`components/config/refresh-config-button.tsx`)
   memanggil server action `revalidatePublicConfig()` (`lib/actions/public-config.ts`)
   → `POST /config/public/revalidate`, lalu `router.refresh()`.
+
+### Metode pembayaran (dipindah dari menu Pembayaran)
+
+Setting gateway pembayaran yang dulu ada di halaman `/payments` kini berada di
+kartu **Metode pembayaran** di `/config`.
+
+- Komponen: `PaymentGatewaySettings`
+  (`components/config/payment-gateway-settings.tsx`, Client Component) — radio
+  cards 5 pilihan + tombol Simpan.
+- Server action: `updatePaymentGatewaySetting(mode)` (`lib/actions/payments.ts`)
+  → `PATCH /payments/settings` body `{ paymentGatewayMode }`.
+- Nilai dibaca dari `GET /payments/settings` (butuh auth) saat render; bila gagal,
+  dipakai fallback `MIDTRANS_CASH`.
+- Pilihan mode: `MIDTRANS`, `XENDIT`, `MIDTRANS_CASH`, `XENDIT_CASH`, `CASH`.
+  Gateway online yang dipilih (`MIDTRANS`/`XENDIT`) menentukan integrasi
+  checkout **embedded** mana yang dipakai app pelanggan (Snap embedded untuk
+  Midtrans, Xendit Components untuk Xendit). Efeknya ke app pelanggan
+  dijelaskan di `M5-pembayaran.md`.
 
 ---
 
@@ -119,4 +137,6 @@ agar halaman tetap render (peta jatuh ke tampilan "belum dikonfigurasi").
 - [x] `POST /config/public/revalidate` hanya untuk ADMIN/SUPER_ADMIN.
 - [x] Tombol "Refresh konfigurasi" memperbarui tampilan tanpa restart.
 - [x] Bila backend mati, halaman tetap render (fallback), bukan error.
+- [x] Pengaturan gateway pembayaran pindah dari `/payments` ke `/config` dengan
+      5 pilihan mode metode pembayaran.
 - [x] `tsc`/lint lolos di Backend & ketiga frontend.

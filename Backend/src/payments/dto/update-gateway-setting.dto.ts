@@ -1,7 +1,7 @@
 import { IsEnum } from 'class-validator';
-import { PaymentProvider } from './create-payment.dto.js';
+import { PaymentGatewayMode } from '../payment-gateway-mode.js';
 
 export class UpdateGatewaySettingDto {
-  @IsEnum(PaymentProvider)
-  paymentGateway: PaymentProvider;
+  @IsEnum(PaymentGatewayMode)
+  paymentGatewayMode: PaymentGatewayMode;
 }

@@ -25,16 +25,27 @@ export class MidtransClientService {
     createTransaction: (payload: unknown) => Promise<{ token: string; redirect_url: string }>;
   };
   readonly serverKey: string;
-  private readonly isProduction: boolean;
+  // Client key Midtrans memang dipakai di browser (Snap.js), jadi bukan rahasia.
+  // Tetap tidak pernah disimpan/di-log, hanya diteruskan ke app pelanggan.
+  readonly clientKey: string;
+  readonly isProduction: boolean;
 
   constructor(config: ConfigService) {
     this.serverKey = config.getOrThrow<string>('MIDTRANS_SERVER_KEY');
+    this.clientKey = config.get<string>('MIDTRANS_CLIENT_KEY') ?? '';
     this.isProduction = config.get('MIDTRANS_IS_PRODUCTION') === 'true';
     this.snap = new midtransClient.Snap({
       isProduction: this.isProduction,
       serverKey: this.serverKey,
-      clientKey: config.get<string>('MIDTRANS_CLIENT_KEY'),
+      clientKey: this.clientKey,
     });
+  }
+
+  /** URL Snap.js yang harus dimuat app pelanggan untuk mode embedded. */
+  get snapJsUrl(): string {
+    return this.isProduction
+      ? 'https://app.midtrans.com/snap/snap.js'
+      : 'https://app.sandbox.midtrans.com/snap/snap.js';
   }
 
   /**

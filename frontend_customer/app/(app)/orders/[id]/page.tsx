@@ -16,7 +16,10 @@ import { StatusBadge } from "@/components/shared/status-badge"
 import { ErrorState } from "@/components/shared/error-state"
 import { Card } from "@/components/ui/card"
 import { ApiError, serverFetch } from "@/lib/api"
-import { getGoogleMapsApiKey } from "@/lib/server-config"
+import {
+  getGoogleMapsApiKey,
+  getPaymentMethodSettings,
+} from "@/lib/server-config"
 import { requireSession } from "@/lib/session"
 import {
   ORDER_STATUS_META,
@@ -65,15 +68,17 @@ export default async function OrderDetailPage({
     )
   }
 
-  const [payment, rating, latest, history, googleMapsApiKey] = await Promise.all([
-    safeGet<Payment>(`/payments/order/${order.id}`),
-    safeGet<Rating>(`/ratings/order/${order.id}`),
-    safeGet<TrackingPoint>(`/tracking/orders/${order.id}/latest`),
-    safeGet<TrackingPoint[]>(
-      `/tracking/orders/${order.id}/history?limit=500`
-    ),
-    getGoogleMapsApiKey(),
-  ])
+  const [payment, rating, latest, history, googleMapsApiKey, paymentSettings] =
+    await Promise.all([
+      safeGet<Payment>(`/payments/order/${order.id}`),
+      safeGet<Rating>(`/ratings/order/${order.id}`),
+      safeGet<TrackingPoint>(`/tracking/orders/${order.id}/latest`),
+      safeGet<TrackingPoint[]>(
+        `/tracking/orders/${order.id}/history?limit=500`
+      ),
+      getGoogleMapsApiKey(),
+      getPaymentMethodSettings(),
+    ])
 
   const pickup = {
     position: {
@@ -146,6 +151,7 @@ export default async function OrderDetailPage({
             amount={order.finalPrice ?? order.estimatedPrice}
             status={order.status}
             payment={payment}
+            paymentSettings={paymentSettings}
           />
 
           {order.status === "COMPLETED" ? (
@@ -224,6 +230,7 @@ export default async function OrderDetailPage({
                 amount={order.finalPrice ?? order.estimatedPrice}
                 status={order.status}
                 payment={payment}
+                paymentSettings={paymentSettings}
               />
 
               {order.status === "COMPLETED" ? (

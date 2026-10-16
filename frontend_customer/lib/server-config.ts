@@ -1,4 +1,5 @@
 import { BACKEND_URL } from "@/lib/config"
+import type { PaymentMethodSettings } from "@/types"
 
 export interface PublicConfig {
   appName: string
@@ -52,6 +53,36 @@ export async function getPublicConfig(): Promise<PublicConfig> {
 
 export async function getGoogleMapsApiKey(): Promise<string> {
   return (await getPublicConfig()).googleMapsApiKey
+}
+
+const FALLBACK_PAYMENT_METHOD_SETTINGS: PaymentMethodSettings = {
+  // Default lama: online Midtrans + tunai selalu tersedia.
+  mode: "MIDTRANS_CASH",
+  gateway: "MIDTRANS",
+  cashEnabled: true,
+  midtransClientKey: "",
+  midtransIsProduction: false,
+  midtransSnapJsUrl: "https://app.sandbox.midtrans.com/snap/snap.js",
+}
+
+/**
+ * Metode pembayaran yang sedang diizinkan admin lewat `GET /payments/methods`
+ * (endpoint publik, tanpa auth). Dipakai untuk menyembunyikan tombol metode
+ * yang tidak aktif di halaman order. Bila backend tidak dapat dihubungi,
+ * kembalikan default agar halaman tetap tampil.
+ */
+export async function getPaymentMethodSettings(): Promise<PaymentMethodSettings> {
+  try {
+    const res = await fetch(`${BACKEND_URL}/payments/methods`, {
+      headers: { Accept: "application/json" },
+      cache: "no-store",
+    })
+    if (!res.ok) return FALLBACK_PAYMENT_METHOD_SETTINGS
+    const data = (await res.json()) as Partial<PaymentMethodSettings>
+    return { ...FALLBACK_PAYMENT_METHOD_SETTINGS, ...data }
+  } catch {
+    return FALLBACK_PAYMENT_METHOD_SETTINGS
+  }
 }
 
 /** Status & versi backend, untuk halaman status/monitoring. */

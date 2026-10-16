@@ -68,13 +68,69 @@ export const PAYMENT_PROVIDER_META: Record<
   MIDTRANS: {
     label: "Midtrans",
     description:
-      "Pembayaran via Snap Midtrans: VA, e-wallet, kartu kredit, dan retail.",
+      "Pembayaran via Snap Midtrans (embedded): VA, e-wallet, kartu kredit, dan retail.",
   },
   XENDIT: {
     label: "Xendit",
     description:
-      "Pembayaran via Invoice Xendit: VA, e-wallet, kartu kredit, dan QRIS.",
+      "Pembayaran via Xendit Components (embedded): VA, QRIS, e-wallet, dan kartu kredit.",
   },
+}
+
+export const PaymentGatewayMode = {
+  MIDTRANS: "MIDTRANS",
+  XENDIT: "XENDIT",
+  MIDTRANS_CASH: "MIDTRANS_CASH",
+  XENDIT_CASH: "XENDIT_CASH",
+  CASH: "CASH",
+} as const
+export type PaymentGatewayMode =
+  (typeof PaymentGatewayMode)[keyof typeof PaymentGatewayMode]
+
+export const PAYMENT_GATEWAY_MODE_META: Record<
+  PaymentGatewayMode,
+  { label: string; description: string; gateway: PaymentProvider | null; cashEnabled: boolean }
+> = {
+  MIDTRANS: {
+    label: "Midtrans",
+    description:
+      "Hanya pembayaran online via Midtrans (Snap, embedded): VA, e-wallet, kartu kredit, dan retail.",
+    gateway: "MIDTRANS",
+    cashEnabled: false,
+  },
+  XENDIT: {
+    label: "Xendit",
+    description:
+      "Hanya pembayaran online via Xendit (Components, embedded): VA, QRIS, e-wallet, dan kartu kredit.",
+    gateway: "XENDIT",
+    cashEnabled: false,
+  },
+  MIDTRANS_CASH: {
+    label: "Midtrans + Cash",
+    description:
+      "Pelanggan memilih bayar online via Midtrans atau bayar tunai ke mitra.",
+    gateway: "MIDTRANS",
+    cashEnabled: true,
+  },
+  XENDIT_CASH: {
+    label: "Xendit + Cash",
+    description:
+      "Pelanggan memilih bayar online via Xendit atau bayar tunai ke mitra.",
+    gateway: "XENDIT",
+    cashEnabled: true,
+  },
+  CASH: {
+    label: "Cash",
+    description: "Hanya pembayaran tunai langsung ke mitra (tanpa gateway online).",
+    gateway: null,
+    cashEnabled: true,
+  },
+}
+
+export interface PaymentGatewaySetting {
+  mode: PaymentGatewayMode
+  gateway: PaymentProvider | null
+  cashEnabled: boolean
 }
 
 export const PromoType = {

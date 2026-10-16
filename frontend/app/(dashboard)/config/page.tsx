@@ -1,6 +1,7 @@
 import { CheckCircle2, XCircle } from "lucide-react"
 
 import { PageHeader } from "@/components/shared/page-header"
+import { PaymentGatewaySettings } from "@/components/config/payment-gateway-settings"
 import { RefreshConfigButton } from "@/components/config/refresh-config-button"
 import {
   Card,
@@ -9,10 +10,35 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import { ApiError, serverFetch } from "@/lib/api"
 import { formatDateTime } from "@/lib/format"
 import { getBackendHealth, getPublicConfig } from "@/lib/server-config"
+import {
+  PaymentGatewayMode,
+  PaymentProvider,
+  type PaymentGatewaySetting,
+} from "@/types"
 
 export const dynamic = "force-dynamic"
+
+// Setting metode pembayaran butuh auth (ADMIN/SUPER_ADMIN). Kalau gagal memuat,
+// halaman tetap tampil dengan default (Midtrans + Cash) -- backend tetap
+// menyimpan sumber kebenarannya.
+async function getPaymentGatewaySetting(): Promise<PaymentGatewaySetting> {
+  const fallback: PaymentGatewaySetting = {
+    mode: PaymentGatewayMode.MIDTRANS_CASH,
+    gateway: PaymentProvider.MIDTRANS,
+    cashEnabled: true,
+  }
+  try {
+    return await serverFetch<PaymentGatewaySetting>("/payments/settings", {
+      cache: "no-store",
+    })
+  } catch (error) {
+    if (!(error instanceof ApiError)) throw error
+    return fallback
+  }
+}
 
 function maskSecret(value: string): string {
   if (!value) return ""
@@ -48,9 +74,10 @@ function Row({
 }
 
 export default async function ConfigPage() {
-  const [config, health] = await Promise.all([
+  const [config, health, paymentSettings] = await Promise.all([
     getPublicConfig(),
     getBackendHealth(),
+    getPaymentGatewaySetting(),
   ])
 
   const mapsConfigured = Boolean(config.googleMapsApiKey)
@@ -59,7 +86,7 @@ export default async function ConfigPage() {
     <>
       <PageHeader
         title="Konfigurasi"
-        description="Konfigurasi publik yang dibagikan ke app pelanggan, mitra, dan admin."
+        description="Konfigurasi aplikasi: identitas publik, Google Maps, dan metode pembayaran."
       >
         <RefreshConfigButton />
       </PageHeader>
@@ -143,6 +170,19 @@ export default async function ConfigPage() {
                 )}
               </Row>
             </dl>
+          </CardContent>
+        </Card>
+
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle>Metode pembayaran</CardTitle>
+            <CardDescription>
+              Pilih metode pembayaran yang tersedia untuk pelanggan. Perubahan
+              langsung berlaku untuk order baru.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <PaymentGatewaySettings value={paymentSettings.mode} />
           </CardContent>
         </Card>
 

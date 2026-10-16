@@ -16,13 +16,7 @@ import { PaymentStatusFilter } from "@/components/payments/payment-status-filter
 import { PaymentMethodFilter } from "@/components/payments/payment-method-filter"
 import { PaymentDateFilter } from "@/components/payments/payment-date-filter"
 import { PaymentActions } from "@/components/payments/payment-actions"
-import { GatewaySettingsButton } from "@/components/payments/gateway-settings-button"
-import {
-  PAYMENT_PROVIDER_META,
-  PaymentProvider as PaymentProviderEnum,
-  type PaymentListItem,
-  type PaymentProvider,
-} from "@/types"
+import type { PaymentListItem } from "@/types"
 
 const PAGE_SIZE = 20
 
@@ -99,24 +93,6 @@ export default async function PaymentsPage({
   let data: PaymentListItem[] = []
   let total = 0
   let page = 1
-
-  // Setting gateway global. Gagal memuat bukan alasan halaman gagal --
-  // cukup fallback ke MIDTRANS (default backend).
-  let paymentGateway: PaymentProvider = PaymentProviderEnum.MIDTRANS
-  try {
-    const settings = await serverFetch<{ paymentGateway: PaymentProvider }>(
-      "/payments/settings",
-      { cache: "no-store" }
-    )
-    if (
-      settings.paymentGateway === PaymentProviderEnum.MIDTRANS ||
-      settings.paymentGateway === PaymentProviderEnum.XENDIT
-    ) {
-      paymentGateway = settings.paymentGateway
-    }
-  } catch {
-    // biarkan default
-  }
 
   try {
     const result = await serverFetch<{
@@ -239,14 +215,7 @@ export default async function PaymentsPage({
         title="Pembayaran"
         description="Pantau pembayaran dan konfirmasi pembayaran tunai."
       >
-        <GatewaySettingsButton value={paymentGateway} />
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs text-muted-foreground">
-            Gateway aktif:{" "}
-            <span className="font-medium text-foreground">
-              {PAYMENT_PROVIDER_META[paymentGateway].label}
-            </span>
-          </span>
           <PaymentStatusFilter
             value={status ?? "ALL"}
             basePath="/payments"

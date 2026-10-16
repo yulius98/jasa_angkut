@@ -126,13 +126,13 @@ frontend/
 | M2 | Dashboard Ringkasan | `/dashboard` | `GET /admin/dashboard` | ✅ Selesai |
 | M3 | Verifikasi Partner | `/partners` | `GET /partners`, `GET /partners/:id`, `approve/reject/suspend`, `documents` | ✅ Selesai |
 | M4 | Manajemen Order (+ M11 Tracking) | `/orders` | `GET /orders`, `GET /orders/:id`, `tracking/*` | ✅ Selesai |
-| M5 | Pembayaran | `/payments` | `GET /payments`, `PATCH /payments/:id/mark-paid`, `GET/PATCH /payments/settings` | ✅ Selesai |
+| M5 | Pembayaran | `/payments` | `GET /payments`, `PATCH /payments/:id/mark-paid`, `GET /payments/methods` | ✅ Selesai |
 | M6 | Harga (Zona & Promo) | `/pricing/zones`, `/pricing/promos` | `GET/POST/PATCH zones`, `GET/POST/PATCH promos` | ✅ Selesai |
 | M7 | Dispute | `/disputes` | `GET /admin/disputes`, `PATCH /admin/disputes/:id/resolve` | ✅ Selesai |
 | M8 | Pencairan (Withdrawal) | `/withdrawals` | `GET/POST /admin/withdrawals`, `refresh-status` | ✅ Selesai |
 | M9 | Pelanggan | `/customers` | `GET /admin/customers` | ✅ Selesai |
 | M10 | Kelola Admin | `/admins` | `GET/POST/PATCH/DELETE /admin/admins` | ✅ Selesai |
-| M12 | Konfigurasi & Public Config | `/config` | `GET /config/public`, `/config/health`, `POST /config/public/revalidate` | ✅ Selesai |
+| M12 | Konfigurasi & Public Config | `/config` | `GET /config/public`, `/config/health`, `POST /config/public/revalidate`, `GET/PATCH /payments/settings` | ✅ Selesai |
 
 Keterangan status: ⬜ Belum · 🟡 Sedang dikerjakan · ✅ Selesai
 
