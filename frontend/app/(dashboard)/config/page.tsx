@@ -1,6 +1,7 @@
 import { CheckCircle2, XCircle } from "lucide-react"
 
 import { PageHeader } from "@/components/shared/page-header"
+import { PasswordResetSettings } from "@/components/config/password-reset-settings"
 import { PaymentGatewaySettings } from "@/components/config/payment-gateway-settings"
 import { RefreshConfigButton } from "@/components/config/refresh-config-button"
 import {
@@ -32,6 +33,23 @@ async function getPaymentGatewaySetting(): Promise<PaymentGatewaySetting> {
   }
   try {
     return await serverFetch<PaymentGatewaySetting>("/payments/settings", {
+      cache: "no-store",
+    })
+  } catch (error) {
+    if (!(error instanceof ApiError)) throw error
+    return fallback
+  }
+}
+
+// Setting masa berlaku link "lupa password" (jam) dari SystemSetting. Kalau
+// gagal memuat, tampilkan fallback 24 jam (backend tetap sumber kebenaran).
+async function getPasswordResetSetting(): Promise<{
+  ttlHours: number
+  mailConfigured: boolean
+}> {
+  const fallback = { ttlHours: 24, mailConfigured: false }
+  try {
+    return await serverFetch<typeof fallback>("/auth/password/settings", {
       cache: "no-store",
     })
   } catch (error) {
@@ -74,11 +92,13 @@ function Row({
 }
 
 export default async function ConfigPage() {
-  const [config, health, paymentSettings] = await Promise.all([
-    getPublicConfig(),
-    getBackendHealth(),
-    getPaymentGatewaySetting(),
-  ])
+  const [config, health, paymentSettings, passwordResetSettings] =
+    await Promise.all([
+      getPublicConfig(),
+      getBackendHealth(),
+      getPaymentGatewaySetting(),
+      getPasswordResetSetting(),
+    ])
 
   const mapsConfigured = Boolean(config.googleMapsApiKey)
 
@@ -183,6 +203,23 @@ export default async function ConfigPage() {
           </CardHeader>
           <CardContent>
             <PaymentGatewaySettings value={paymentSettings.mode} />
+          </CardContent>
+        </Card>
+
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle>Lupa password</CardTitle>
+            <CardDescription>
+              Atur masa berlaku tautan "ganti password" yang dikirim ke email
+              (bawaan 24 jam = 1 hari). Setelah batas ini, tautan kedaluwarsa
+              dan harus diminta ulang.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <PasswordResetSettings
+              value={passwordResetSettings.ttlHours}
+              mailConfigured={passwordResetSettings.mailConfigured}
+            />
           </CardContent>
         </Card>
 

@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 
+import { ForgotPasswordDialog } from "@/components/auth/forgot-password-dialog"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -109,6 +110,10 @@ export default function LoginPage() {
             {isSubmitting ? <Spinner /> : null}
             Masuk
           </Button>
+
+          <div className="flex justify-center">
+            <ForgotPasswordDialog />
+          </div>
         </form>
       </CardContent>
     </Card>

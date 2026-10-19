@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation"
 import { Eye, EyeOff } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import { ForgotPasswordDialog } from "@/components/auth/forgot-password-dialog"
 import { Field, FieldError, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { Spinner } from "@/components/ui/spinner"
@@ -103,6 +104,10 @@ export function LoginForm({ next }: { next?: string }) {
         {loading ? <Spinner /> : null}
         Masuk
       </Button>
+
+      <div className="flex justify-center">
+        <ForgotPasswordDialog />
+      </div>
 
       <p className="text-center text-sm text-muted-foreground">
         Belum punya akun?{" "}
