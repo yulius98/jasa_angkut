@@ -99,7 +99,31 @@ export function PaymentCheckout({
 
   // Muat / buat ulang instruksi pembayaran online. Backend meng-upsert baris
   // pembayaran selama belum lunas, jadi menekan tombol ini berkali-kali aman.
+  // Xendit Components memvalidasi origin browser secara runtime: origin
+  // halaman HARUS sama dengan `components_configuration.origins` yang
+  // terdaftar di session, dan Xendit hanya menerima HTTPS. Bila halaman ini
+  // dibuka lewat http:// (mis. lupa memakai `pnpm dev:https`), gagal cepat di
+  // sini dengan petunjuk membetulkan -- alih-alih error samar
+  // "origin is not registered" dari SDK Xendit.
+  function assertSecureOriginForOnline(): string | null {
+    if (gateway !== "XENDIT") return null
+    if (typeof window === "undefined") return null
+    if (window.location.protocol === "https:") return null
+    return (
+      "Pembayaran online (Xendit) memerlukan halaman HTTPS. " +
+      "Jalankan app ini dengan `pnpm dev:https` lalu buka " +
+      `https://${window.location.host} -- halaman http://${window.location.host} ` +
+      "tidak diizinkan pada sesi pembayaran ini."
+    )
+  }
+
   async function startOnline() {
+    const originError = assertSecureOriginForOnline()
+    if (originError) {
+      setMessage(originError)
+      setStage("failed")
+      return
+    }
     setMessage(null)
     setStage("processing")
     const result = await createPaymentAction(orderId, "VIRTUAL_ACCOUNT")

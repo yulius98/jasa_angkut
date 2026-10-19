@@ -6,6 +6,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { randomUUID } from 'node:crypto';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { OrderStatus, PaymentMethod, PaymentStatus, UserRole } from '../generated/prisma/enums.js';
 import type { AuthUser } from '../common/auth-user.js';
@@ -32,6 +33,14 @@ const DEFAULT_COMMISSION_RATE = 0.15;
 // Masa berlaku sesi pembayaran online (Snap / Xendit Session) dalam menit.
 // Dipakai juga sebagai batas bawah "kedaluwarsa" di UI pelanggan.
 const SESSION_TTL_MINUTES = 30;
+
+// customer.reference_id di Xendit harus UNIK GLOBAL (409 DUPLICATE_ERROR
+// kalau sudah pernah dipakai). Sesi adalah flow one-time PAY yang dibuat ulang
+// tiap percobaan, jadi referensinya HARUS baru setiap kali sesi dibuat --
+// bukan ID deterministik seperti orderNumber/orderId.
+function newXenditCustomerRefId(): string {
+  return `cust${randomUUID().replace(/-/g, '')}`;
+}
 
 // Xendit hanya mengizinkan huruf/angka (dan spasi) di nama customer.
 function sanitizeXenditName(name: string): string {
@@ -208,7 +217,7 @@ export class PaymentsService {
       const session = await this.xendit.createComponentsSession({
         referenceId: order.orderNumber,
         amount,
-        customerRefId: `cust${order.id.replace(/-/g, '')}`,
+        customerRefId: newXenditCustomerRefId(),
         customerName: sanitizeXenditName(customer.user.name),
         customerEmail: normalizeXenditEmail(customer.user.email),
         customerPhone: normalizeXenditPhone(customer.user.phone),
@@ -279,15 +288,31 @@ export class PaymentsService {
 
   // Origin app pelanggan untuk validasi CORS Xendit Components. Bisa dipisah
   // dari CORS_ORIGIN lewat XENDIT_COMPONENTS_ORIGINS (dipisah koma).
+  //
+  // Xendit Session API menolak origin http:// dengan
+  // API_VALIDATION_ERROR "components_configuration.origins need to use HTTPS"
+  // -- berlaku juga di mode development. Jadi origin non-HTTPS kita buang di
+  // sini, dan bila kosong kita gagal cepat dengan pesan yang menjelaskan
+  // caranya membetulkan, alih-alih error mentah 400 dari Xendit.
   private xenditComponentsOrigins(): string[] {
     const raw =
       this.config.get<string>('XENDIT_COMPONENTS_ORIGINS') ||
       this.config.get<string>('CORS_ORIGIN') ||
       '';
-    return raw
+    const origins = raw
       .split(',')
       .map((value) => value.trim())
-      .filter(Boolean);
+      .filter((value) => value.startsWith('https://'));
+    if (origins.length === 0) {
+      throw new BadRequestException(
+        'Origin HTTPS app pelanggan belum dikonfigurasi untuk Xendit ' +
+          "Components. Set XENDIT_COMPONENTS_ORIGINS dengan origin HTTPS " +
+          '(mis. https://localhost:3002 saat dev dengan `pnpm dev:https`), ' +
+          'lalu jalankan app pelanggan lewat HTTPS -- Xendit menolak origin ' +
+          'http://.',
+      );
+    }
+    return origins;
   }
 
   // URL kembali setelah pembayaran. Hanya dikirim bila HTTPS, karena Xendit

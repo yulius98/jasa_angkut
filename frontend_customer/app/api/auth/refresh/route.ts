@@ -21,7 +21,7 @@ function safeRedirect(value: string | null): string {
   return "/home"
 }
 
-export async function GET(request: NextRequest) {
+async function handleAuthRefresh(request: NextRequest) {
   const refreshToken = request.cookies.get(REFRESH_TOKEN_COOKIE)?.value
   const user = parseSessionUser(request.cookies.get(USER_COOKIE)?.value)
   const next = safeRedirect(request.nextUrl.searchParams.get("next"))
@@ -59,3 +59,6 @@ export async function GET(request: NextRequest) {
     return response
   }
 }
+
+export const GET = handleAuthRefresh
+export const POST = handleAuthRefresh
