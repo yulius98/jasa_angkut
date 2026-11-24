@@ -159,6 +159,7 @@ export function CreateOrderForm({ apiKey }: { apiKey: string }) {
           value={pickup}
           onChange={setPickup}
           onAddressChange={setPickupAddress}
+          searchAddress={pickupAddress}
         />
         <Field>
           <FieldLabel htmlFor="pickupAddress">Alamat jemput</FieldLabel>
@@ -169,6 +170,9 @@ export function CreateOrderForm({ apiKey }: { apiKey: string }) {
             onChange={(e) => setPickupAddress(e.target.value)}
             required
           />
+          <p className="text-xs text-muted-foreground">
+            Isi alamat ini dan titik jemput di peta akan dicari otomatis.
+          </p>
         </Field>
       </Card>
 

@@ -16,6 +16,7 @@ import { AdminModule } from './admin/admin.module.js';
 import { WithdrawalsModule } from './withdrawals/withdrawals.module.js';
 import { ChatModule } from './chat/chat.module.js';
 import { PublicConfigModule } from './public-config/public-config.module.js';
+import { GeocodeModule } from './geocode/geocode.module.js';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { PublicConfigModule } from './public-config/public-config.module.js';
     WithdrawalsModule,
     ChatModule,
     PublicConfigModule,
+    GeocodeModule,
   ],
   controllers: [AppController],
   providers: [AppService],

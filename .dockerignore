@@ -1,0 +1,15 @@
+.git
+.gitignore
+**/node_modules
+**/.next
+**/dist
+**/coverage
+**/*.tsbuildinfo
+**/.env
+**/.env.*
+**/certificates
+**/*.log
+Backend
+sonar-project.properties
+tes.png
+*.md

@@ -1,0 +1,68 @@
+# syntax=docker/dockerfile:1.7
+# ---------------------------------------------------------------------------
+# Dockerfile generik untuk ke-4 frontend Next.js 16 di monorepo ini.
+# Dipanggil 4x dari docker-compose.yml dengan ARG APP_DIR / PORT berbeda.
+#
+#   APP_DIR=frontend              PORT=3000  (Admin)
+#   APP_DIR=frontend_customer     PORT=3002  (Customer)
+#   APP_DIR=frontend_landingpage  PORT=3003  (Landing page)
+#   APP_DIR=frontend_mitra        PORT=3004  (Mitra/driver)
+#
+# Tidak memakai output:"standalone" (tidak diubah dari source), jadi runtime
+# menjalankan `next start` dengan .next + production node_modules.
+# ---------------------------------------------------------------------------
+
+FROM node:22-bookworm-slim AS base
+ARG APP_DIR=frontend
+ARG PORT=3000
+ENV APP_DIR=${APP_DIR} \
+    PORT=${PORT} \
+    NEXT_TELEMETRY_DISABLED=1 \
+    PNPM_HOME=/pnpm \
+    PATH=/pnpm:$PATH
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends ca-certificates tini \
+ && rm -rf /var/lib/apt/lists/* \
+ && npm install -g pnpm@12.8.1
+WORKDIR /app
+
+# --- dependencies (dev + prod untuk build) --------------------------------
+FROM base AS deps
+WORKDIR /app/${APP_DIR}
+COPY ${APP_DIR}/package.json ${APP_DIR}/pnpm-lock.yaml ${APP_DIR}/pnpm-workspace.yaml ./
+RUN pnpm install --frozen-lockfile
+
+# --- build -----------------------------------------------------------------
+FROM deps AS builder
+COPY ${APP_DIR}/ ./
+# BACKEND_URL dipakai server component / route handler saat runtime.
+# NEXT_PUBLIC_* untuk landing page HARUS diset saat build (di-inline Next).
+ARG BACKEND_URL=http://backend:3001
+ARG NEXT_PUBLIC_CUSTOMER_APP_URL=https://localhost:3002
+ARG NEXT_PUBLIC_PARTNER_APP_URL=http://localhost:3004
+ENV BACKEND_URL=${BACKEND_URL} \
+    NEXT_PUBLIC_CUSTOMER_APP_URL=${NEXT_PUBLIC_CUSTOMER_APP_URL} \
+    NEXT_PUBLIC_PARTNER_APP_URL=${NEXT_PUBLIC_PARTNER_APP_URL}
+RUN pnpm build \
+ && mkdir -p public
+
+# --- production dependencies only -----------------------------------------
+FROM base AS prod-deps
+WORKDIR /app/${APP_DIR}
+COPY ${APP_DIR}/package.json ${APP_DIR}/pnpm-lock.yaml ${APP_DIR}/pnpm-workspace.yaml ./
+RUN pnpm install --frozen-lockfile --prod
+
+# --- runtime ---------------------------------------------------------------
+FROM base AS runner
+ENV NODE_ENV=production
+WORKDIR /app/${APP_DIR}
+COPY --from=prod-deps /app/${APP_DIR}/node_modules ./node_modules
+COPY --from=builder /app/${APP_DIR}/.next ./.next
+COPY --from=builder /app/${APP_DIR}/public ./public
+COPY --from=builder /app/${APP_DIR}/package.json ./package.json
+COPY --from=builder /app/${APP_DIR}/next.config.ts ./next.config.ts
+RUN chown -R node:node /app
+USER node
+EXPOSE 3000 3002 3003 3004
+ENTRYPOINT ["/usr/bin/tini", "--"]
+CMD ["pnpm", "start"]

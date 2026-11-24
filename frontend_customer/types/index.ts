@@ -360,6 +360,13 @@ export interface TrackingPoint {
   recordedAt: string
 }
 
+/** Hasil pencarian lokasi lewat `GET /api/proxy/geocode` (proxy backend). */
+export interface GeocodeHit {
+  lat: number
+  lng: number
+  formattedAddress: string
+}
+
 export interface Rating {
   id: string
   orderId: string
